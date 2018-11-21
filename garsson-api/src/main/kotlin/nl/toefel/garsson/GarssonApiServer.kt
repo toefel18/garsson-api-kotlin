@@ -58,7 +58,7 @@ class GarssonApiServer(config: Config) {
 }
 
 fun HttpServerExchange.sendJson(code:Int, body:Any) {
-    this.setStatusCode(code)
+    this.statusCode = code
     this.responseHeaders.put(Headers.CONTENT_TYPE, MediaTypes.APPLICATION_JSON)
     this.responseSender.send(Jsonizer.toJson(body))
 }
