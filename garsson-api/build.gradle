@@ -18,6 +18,7 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "org.jetbrains.kotlin:kotlin-reflect"
+    compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
 
     compile "org.slf4j:slf4j-api:1.7.25'"
     compile "ch.qos.logback:logback-classic:1.2.3"
@@ -25,7 +26,9 @@ dependencies {
     compile "io.undertow:undertow-core:2.0.15.Final"
     compile "io.undertow:undertow-websockets-jsr:2.0.15.Final"
 
-    testCompile "org.jetbrains.kotlin:kotlin-test"
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit"
+    testCompile 'io.kotlintest:kotlintest-runner-junit5:3.1.10'
 }
 
+test {
+    useJUnitPlatform()
+}
