@@ -1,19 +1,19 @@
-package nl.toefel.garsson
+package nl.toefel.garsson.server
 
 import io.undertow.Handlers
 import io.undertow.Undertow
-import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
 import io.undertow.server.RoutingHandler
 import io.undertow.util.Headers
+import nl.toefel.garsson.Config
 import nl.toefel.garsson.json.Jsonizer
-import java.nio.charset.Charset
+import nl.toefel.garsson.server.middleware.RequestLoggingHandler
 
 class GarssonApiServer(config: Config) {
 
     val undertow = Undertow.builder()
             .addHttpListener(config.port, "0.0.0.0")
-            .setHandler(Logger(getRoutes()))
+            .setHandler(RequestLoggingHandler(getRoutes()))
             .build()
 
     fun start() {
@@ -22,14 +22,6 @@ class GarssonApiServer(config: Config) {
 
     fun stop() {
         undertow.stop()
-    }
-
-    private fun Logger(child: HttpHandler): HttpHandler = HttpHandler { exchange ->
-        val start = System.currentTimeMillis()
-        child.handleRequest(exchange)
-        val duration = System.currentTimeMillis() - start
-
-        println("IN ${exchange.requestMethod} status=${exchange.statusCode} duration=${duration}ms")
     }
 
     private fun getRoutes(): RoutingHandler {
