@@ -8,7 +8,8 @@
 plugins {
     id "base"
     id "idea"
-    id "org.jetbrains.kotlin.jvm" version "1.3.0"
+    id "org.jetbrains.kotlin.jvm" version "1.3.30"
+    id "com.peterabeles.gversion" version "1.5.0"
 }
 
 repositories {
@@ -32,6 +33,31 @@ dependencies {
     compile "io.undertow:undertow-websockets-jsr:2.0.15.Final"
     testCompile 'io.kotlintest:kotlintest-runner-junit5:3.1.10'
 }
+
+gversion {
+    srcDir       = "src/main/kotlin/"           // path is relative to the sub-project by default
+    // Gradle variables can also be used
+    // E.g. "${project.rootDir}/module/src/main/java"
+    classPackage = "nl.toefel.garsson"
+    className    = "BuildInfo"                // optional. If not specified GVersion is used
+    dateFormat   = "yyyy-MM-dd'T'HH:mm:ss'Z'" // optional. This is the default
+    timeZone     = "UTC"                      // optional. UTC is default
+    debug        = false                      // optional. print out extra debug information
+    language     = "kotlin"                     // optional. Can be Java or Kotlin, case insensitive
+    explicitType = false                      // optional. Force types to be explicitly printed
+}
+
+task addBranchToVersionFile() {
+    doLast {
+        def branch = 'git rev-parse --abbrev-ref HEAD'.execute()
+        branch.waitFor()
+        File buildinfo = new File("src/main/kotlin/nl/toefel/garsson/BuildInfo.kt")
+        buildinfo.withWriterAppend { out -> out.println("const val GIT_BRANCH = \"${branch.text.trim()}\"")}
+    }
+}
+
+project.addBranchToVersionFile.dependsOn(createVersionFile)
+project.compileKotlin.dependsOn(addBranchToVersionFile)
 
 test {
     useJUnitPlatform()

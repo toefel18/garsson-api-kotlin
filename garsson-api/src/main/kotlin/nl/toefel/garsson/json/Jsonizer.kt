@@ -15,4 +15,5 @@ object Jsonizer {
                 mapper.writeValueAsString(obj)
 
     inline fun <reified T> fromJson(json: String): T = mapper.readValue(json)
+    inline fun <reified T> fromJson(json: ByteArray): T = mapper.readValue(json)
 }

@@ -8,7 +8,7 @@ import java.time.Duration
 import java.time.ZonedDateTime
 import java.util.*
 
-class JwtHmacAuthenticator(val signSecret: String, val tokenValidity: Duration) {
+class JwtHmacAuthenticator(signSecret: String, val tokenValidity: Duration) {
 
     private val hasher = MessageDigest.getInstance("SHA-256")
     private val sigingKey = Keys.hmacShaKeyFor(hasher.digest(signSecret.toByteArray()))
@@ -28,14 +28,12 @@ class JwtHmacAuthenticator(val signSecret: String, val tokenValidity: Duration) 
     }
 
     fun extractUser(jwt: String): User {
-        try {
-            val parsedJwt = Jwts.parser()
-                    .setSigningKey(sigingKey)
-                    .parseClaimsJws(jwt)
+        val parsedJwt = Jwts.parser()
+                .setSigningKey(sigingKey)
+                .parseClaimsJws(jwt)
 
-            return User(parsedJwt.body.subject, listOf())
-        } catch (ex : Exception) {
-            throw IllegalStateException("Unauthorized", ex)
-        }
+        val roles :List<String> = parsedJwt.body?.get("roles", List::class.java) as List<String>? ?: listOf()
+
+        return User(parsedJwt.body.subject, roles = roles)
     }
 }

@@ -2,18 +2,30 @@ package nl.toefel.garsson.server
 
 import io.undertow.Handlers
 import io.undertow.Undertow
+import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
-import io.undertow.server.RoutingHandler
+import io.undertow.server.handlers.BlockingHandler
 import io.undertow.util.Headers
+import io.undertow.util.HttpString
 import nl.toefel.garsson.Config
+import nl.toefel.garsson.auth.JwtHmacAuthenticator
+import nl.toefel.garsson.auth.User
+import nl.toefel.garsson.dto.ApiError
+import nl.toefel.garsson.dto.LoginCredentials
+import nl.toefel.garsson.dto.SuccessfulLoginResponse
+import nl.toefel.garsson.dto.Version
 import nl.toefel.garsson.json.Jsonizer
+import nl.toefel.garsson.server.middleware.AuthHandler
+import nl.toefel.garsson.server.middleware.CORSHandler
 import nl.toefel.garsson.server.middleware.RequestLoggingHandler
 
-class GarssonApiServer(config: Config) {
+class GarssonApiServer(val config: Config) {
+
+    val auth = JwtHmacAuthenticator(config.jwtSigningSecret, config.tokenValidity)
 
     val undertow = Undertow.builder()
             .addHttpListener(config.port, "0.0.0.0")
-            .setHandler(RequestLoggingHandler(getRoutes()))
+            .setHandler(getRoutes())
             .build()
 
     fun start() {
@@ -24,16 +36,38 @@ class GarssonApiServer(config: Config) {
         undertow.stop()
     }
 
-    private fun getRoutes(): RoutingHandler {
-        return Handlers.routing()
-                .post("/api/login", ::login)
-                .get("/api/products", ::listProducts)
-                .get("/api/orders", ::listOrders)
-                .get("/api/orders/{orderId}", ::getOrder)
+    private fun getRoutes(): HttpHandler {
+        return RequestLoggingHandler(
+                CORSHandler(
+                        Handlers.routing()
+                                .post("/api/v1/login", BlockingHandler(::login))
+                                .get("/version", ::version)
+                                .get("/api/v1/products", AuthHandler(::listProducts, auth))
+                                .get("/api/v1/orders", ::listOrders)
+                                .get("/api/v1/orders/{orderId}", ::getOrder)
+                                .setFallbackHandler(::fallback)
+                                .setInvalidMethodHandler(::invalidMethod)
+                )
+        )
+    }
+
+    private fun fallback(exchange: HttpServerExchange) {
+        exchange.sendJson(Status.NOT_FOUND, ApiError("request uri not found: ${exchange.requestURI}"))
+    }
+
+    private fun invalidMethod(exchange: HttpServerExchange) {
+        exchange.sendJson(Status.METHOD_NOT_ALLOWED, ApiError("method ${exchange.requestMethod} not supported on uri ${exchange.requestURI}"))
     }
 
     private fun login(exchange: HttpServerExchange) {
-        exchange.sendJson(200, "Hello")
+        val credentials: LoginCredentials = Jsonizer.fromJson(exchange.inputStream.readAllBytes())
+        val jwt = auth.generateJwt(User(credentials.email, roles = listOf("user")))
+        exchange.responseHeaders.put(HttpString("Authorization"), "Bearer ${jwt}")
+        exchange.sendJson(200, SuccessfulLoginResponse(jwt))
+    }
+
+    private fun version(exchange: HttpServerExchange) {
+        exchange.sendJson(200, Version.fromBuildInfo())
     }
 
     private fun listProducts(exchange: HttpServerExchange) {
@@ -49,8 +83,26 @@ class GarssonApiServer(config: Config) {
     }
 }
 
-fun HttpServerExchange.sendJson(code:Int, body:Any) {
+fun HttpServerExchange.sendJson(code: Int, data: Any) {
     this.statusCode = code
     this.responseHeaders.put(Headers.CONTENT_TYPE, MediaTypes.APPLICATION_JSON)
+    val body = if (data is ApiError && data.status == -1) {
+        data.copy(status = this.statusCode).copy(uri = this.requestURI)
+    } else {
+        data
+    }
     this.responseSender.send(Jsonizer.toJson(body))
+}
+
+object Status {
+    val OK = 200
+    val CREATED = 201
+    val NO_CONTENT = 204
+    val BAD_REQUEST = 400
+    val UNAUTHORIZED = 401
+    val FORBIDDEN = 401
+    val NOT_FOUND = 404
+    val METHOD_NOT_ALLOWED = 405
+    val UNSUPPORED_MEDIA_TYPE = 415
+    val INTERNAL_SERVER_ERROR = 500
 }
