@@ -7,15 +7,15 @@ import nl.toefel.garsson.server.Status
 import nl.toefel.garsson.server.sendJson
 import org.slf4j.LoggerFactory
 
-class RequireRole(val next: HttpHandler, val requiredRoles: List<String>) : HttpHandler {
+class RequireRole(val requiredRoles: List<String>, val next: HttpHandler) : HttpHandler {
 
     companion object {
         val logger = LoggerFactory.getLogger(RequireRole::class.java)
     }
 
     // allows for wrapping handlers defined as HttpServerExchange -> Unit
-    constructor(next: (HttpServerExchange) -> Unit, requiredRoles: List<String>)
-            : this(HttpHandler { exchange -> next(exchange) }, requiredRoles)
+    constructor(requiredRoles: List<String>, next: (HttpServerExchange) -> Unit)
+            : this(requiredRoles, HttpHandler { exchange -> next(exchange) })
 
     override fun handleRequest(exchange: HttpServerExchange?) {
         val user = exchange?.getAttachment(Keys.USER_ATTACHMENT)
@@ -23,7 +23,7 @@ class RequireRole(val next: HttpHandler, val requiredRoles: List<String>) : Http
             exchange!!.sendJson(Status.UNAUTHORIZED, ApiError("not authenticated, provide Authorization header with valid jwt"))
         } else if (!user.roles.containsAll(requiredRoles)) {
             val missingRoles = requiredRoles.filter { requiredRole -> !user.roles.contains(requiredRole) }
-            exchange.sendJson(Status.FORBIDDEN, ApiError("missing required roles=${missingRoles.joinToString()}, available roles ${user.roles.joinToString()}"))
+            exchange.sendJson(Status.FORBIDDEN, ApiError("missing required roles '${missingRoles.joinToString()}', available roles '${user.roles.joinToString()}'"))
         } else {
             next.handleRequest(exchange)
         }
