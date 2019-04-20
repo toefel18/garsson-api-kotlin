@@ -15,9 +15,7 @@ import nl.toefel.garsson.dto.LoginCredentials
 import nl.toefel.garsson.dto.SuccessfulLoginResponse
 import nl.toefel.garsson.dto.Version
 import nl.toefel.garsson.json.Jsonizer
-import nl.toefel.garsson.server.middleware.AuthHandler
-import nl.toefel.garsson.server.middleware.CORSHandler
-import nl.toefel.garsson.server.middleware.RequestLoggingHandler
+import nl.toefel.garsson.server.middleware.*
 
 class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
 
@@ -37,14 +35,16 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
     private fun getRoutes(): HttpHandler {
         return RequestLoggingHandler(
                 CORSHandler(
-                        Handlers.routing()
-                                .get("/version", ::version)
-                                .post("/api/v1/login", BlockingHandler(::login))
-                                .get("/api/v1/products", AuthHandler(::listProducts, auth))
-                                .get("/api/v1/orders", AuthHandler(::listOrders, auth))
-                                .get("/api/v1/orders/{orderId}", AuthHandler(::getOrder, auth))
-                                .setFallbackHandler(::fallback)
-                                .setInvalidMethodHandler(::invalidMethod)
+                        AuthTokenExtractor(auth,
+                                Handlers.routing()
+                                        .get("/version", ::version)
+                                        .post("/api/v1/login", BlockingHandler(::login))
+                                        .get("/api/v1/products", AuthHandler(::listProducts, auth))
+                                        .get("/api/v1/orders", RequireRole(::listOrders, listOf("user")))
+                                        .get("/api/v1/orders/{orderId}", AuthHandler(::getOrder, auth))
+                                        .setFallbackHandler(::fallback)
+                                        .setInvalidMethodHandler(::invalidMethod)
+                        )
                 )
         )
     }
@@ -98,7 +98,7 @@ object Status {
     val NO_CONTENT = 204
     val BAD_REQUEST = 400
     val UNAUTHORIZED = 401
-    val FORBIDDEN = 401
+    val FORBIDDEN = 403
     val NOT_FOUND = 404
     val METHOD_NOT_ALLOWED = 405
     val UNSUPPORED_MEDIA_TYPE = 415

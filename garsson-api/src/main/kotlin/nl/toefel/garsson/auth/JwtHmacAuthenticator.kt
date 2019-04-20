@@ -2,7 +2,6 @@ package nl.toefel.garsson.auth
 
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
-import java.lang.IllegalStateException
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.ZonedDateTime

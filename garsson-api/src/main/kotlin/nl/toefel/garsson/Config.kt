@@ -19,7 +19,7 @@ data class Config(
 
     companion object {
         private const val DEFAULT_PORT = 8080
-        private const val DEFAULT_JWT_SIGNING_SECRET = "jwt_secret_for_test"
+        private const val DEFAULT_JWT_SIGNING_SECRET = "jwt_secret_for_tests"
         private const val DEFAULT_TOKEN_VALIDITY_HOURS = 12
 
         fun fromEnvironment() = Config(
