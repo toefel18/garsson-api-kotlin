@@ -1,19 +1,20 @@
 package nl.toefel.garsson
 
+//import mu.NamedKLogging
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
-import nl.toefel.garsson.auth.User
 import nl.toefel.garsson.server.GarssonApiServer
-import java.time.Duration
+import org.slf4j.LoggerFactory
 
 fun main(args: Array<String>) {
+//    val logger = object : NamedKLogging("boot"){}.logger
+    val logger = LoggerFactory.getLogger("boot")
     val config = Config.fromEnvironment()
-    println(config)
+    logger.info("Starting, config:  $config")
 
-    val auth = JwtHmacAuthenticator("secret", Duration.ofDays(1))
+    val auth = JwtHmacAuthenticator(config.jwtSigningSecret, config.tokenValidity)
+//    println(auth.generateJwt(User("Toefel", listOf("admin", "user"))))
 
-    println(auth.generateJwt(User("Toefel", listOf("admin", "user"))))
-
-    val server = GarssonApiServer(config)
+    val server = GarssonApiServer(config, auth)
     server.start()
     Runtime.getRuntime().addShutdownHook(Thread(Runnable { server.stop() }))
 }

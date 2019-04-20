@@ -2,12 +2,13 @@ package nl.toefel.garsson.server.middleware
 
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
-import mu.NamedKLogging
+import org.slf4j.LoggerFactory
 
 
 class RequestLoggingHandler(val next: HttpHandler) : HttpHandler {
-
-    companion object : NamedKLogging("RequestLog")
+    companion object {
+        val logger = LoggerFactory.getLogger("RequestLog")
+    }
 
     override fun handleRequest(exchange: HttpServerExchange?) {
         val start = System.currentTimeMillis()
@@ -19,9 +20,9 @@ class RequestLoggingHandler(val next: HttpHandler) : HttpHandler {
         val requestUri = exchange?.requestURI + if (query.isNotEmpty()) "?$query" else ""
         val duration = System.currentTimeMillis() - start
         val user = exchange?.getAttachment(Keys.USER_ATTACHMENT)
-        val userName =  " user=${user?.name ?: "anonymous"}"
+        val userName = " user=${user?.name ?: "anonymous"}"
         val userRoles = " userRoles=[${user?.roles?.joinToString { it } ?: ""}]"
 
-        logger.info { "IN $method status=$status uri=$requestUri duration=$duration remoteHost=$remoteHost${userName}${userRoles}" }
+        logger.info("IN $method status=$status uri=$requestUri duration=$duration remoteHost=$remoteHost${userName}${userRoles}")
     }
 }

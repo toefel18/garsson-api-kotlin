@@ -19,9 +19,7 @@ import nl.toefel.garsson.server.middleware.AuthHandler
 import nl.toefel.garsson.server.middleware.CORSHandler
 import nl.toefel.garsson.server.middleware.RequestLoggingHandler
 
-class GarssonApiServer(val config: Config) {
-
-    val auth = JwtHmacAuthenticator(config.jwtSigningSecret, config.tokenValidity)
+class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
 
     val undertow = Undertow.builder()
             .addHttpListener(config.port, "0.0.0.0")
@@ -40,23 +38,15 @@ class GarssonApiServer(val config: Config) {
         return RequestLoggingHandler(
                 CORSHandler(
                         Handlers.routing()
-                                .post("/api/v1/login", BlockingHandler(::login))
                                 .get("/version", ::version)
+                                .post("/api/v1/login", BlockingHandler(::login))
                                 .get("/api/v1/products", AuthHandler(::listProducts, auth))
-                                .get("/api/v1/orders", ::listOrders)
-                                .get("/api/v1/orders/{orderId}", ::getOrder)
+                                .get("/api/v1/orders", AuthHandler(::listOrders, auth))
+                                .get("/api/v1/orders/{orderId}", AuthHandler(::getOrder, auth))
                                 .setFallbackHandler(::fallback)
                                 .setInvalidMethodHandler(::invalidMethod)
                 )
         )
-    }
-
-    private fun fallback(exchange: HttpServerExchange) {
-        exchange.sendJson(Status.NOT_FOUND, ApiError("request uri not found: ${exchange.requestURI}"))
-    }
-
-    private fun invalidMethod(exchange: HttpServerExchange) {
-        exchange.sendJson(Status.METHOD_NOT_ALLOWED, ApiError("method ${exchange.requestMethod} not supported on uri ${exchange.requestURI}"))
     }
 
     private fun login(exchange: HttpServerExchange) {
@@ -75,11 +65,19 @@ class GarssonApiServer(val config: Config) {
     }
 
     private fun listOrders(exchange: HttpServerExchange) {
-        exchange.sendJson(200, "list orders")
+        exchange.sendJson(200, listOf(createOrder("1"), createOrder("2")))
     }
 
     private fun getOrder(exchange: HttpServerExchange) {
         exchange.sendJson(200, "get order ${exchange.queryParameters["orderId"]?.first}")
+    }
+
+    private fun fallback(exchange: HttpServerExchange) {
+        exchange.sendJson(Status.NOT_FOUND, ApiError("request uri not found: ${exchange.requestURI}"))
+    }
+
+    private fun invalidMethod(exchange: HttpServerExchange) {
+        exchange.sendJson(Status.METHOD_NOT_ALLOWED, ApiError("method ${exchange.requestMethod} not supported on uri ${exchange.requestURI}"))
     }
 }
 

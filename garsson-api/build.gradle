@@ -23,14 +23,14 @@ dependencies {
 
     compile "org.slf4j:slf4j-api:1.7.25'"
     compile "ch.qos.logback:logback-classic:1.2.3"
-    compile 'io.github.microutils:kotlin-logging:1.6.20'
+//    compile 'io.github.microutils:kotlin-logging:1.6.20'
 
     compile 'io.jsonwebtoken:jjwt-api:0.10.5'
     runtime 'io.jsonwebtoken:jjwt-impl:0.10.5'
     runtime 'io.jsonwebtoken:jjwt-jackson:0.10.5'
 
-    compile "io.undertow:undertow-core:2.0.15.Final"
-    compile "io.undertow:undertow-websockets-jsr:2.0.15.Final"
+    compile "io.undertow:undertow-core:2.0.20.Final"
+    compile "io.undertow:undertow-websockets-jsr:2.0.20.Final"
     testCompile 'io.kotlintest:kotlintest-runner-junit5:3.1.10'
 }
 

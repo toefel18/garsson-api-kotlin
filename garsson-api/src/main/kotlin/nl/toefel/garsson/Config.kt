@@ -7,7 +7,13 @@ data class Config(
         val startedTime: String = now(),
         val port: Int,
         val jwtSigningSecret: String,
-        val tokenValidity: Duration) {
+        val tokenValidity: Duration,
+        val applicationName: String = MAVEN_NAME,
+        val applicationVersion: String = VERSION,
+        val applicationBuildDate: String = BUILD_DATE,
+        val applicationGitHash: String = GIT_SHA,
+        val applicationGitBranch: String = GIT_BRANCH,
+        val applicationGitDate: String = GIT_DATE) {
 
     fun safeForLogging() = this.copy(jwtSigningSecret = "*".repeat(jwtSigningSecret.length))
 
