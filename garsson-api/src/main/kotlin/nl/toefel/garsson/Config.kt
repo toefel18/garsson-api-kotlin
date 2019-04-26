@@ -7,13 +7,19 @@ data class Config(
         val startedTime: String = now(),
         val port: Int,
         val jwtSigningSecret: String,
-        val tokenValidity: Duration) {
+        val tokenValidity: Duration,
+        val applicationName: String = MAVEN_NAME,
+        val applicationVersion: String = VERSION,
+        val applicationBuildDate: String = BUILD_DATE,
+        val applicationGitHash: String = GIT_SHA,
+        val applicationGitBranch: String = GIT_BRANCH,
+        val applicationGitDate: String = GIT_DATE) {
 
     fun safeForLogging() = this.copy(jwtSigningSecret = "*".repeat(jwtSigningSecret.length))
 
     companion object {
         private const val DEFAULT_PORT = 8080
-        private const val DEFAULT_JWT_SIGNING_SECRET = "jwt_secret_for_test"
+        private const val DEFAULT_JWT_SIGNING_SECRET = "jwt_secret_for_tests"
         private const val DEFAULT_TOKEN_VALIDITY_HOURS = 12
 
         fun fromEnvironment() = Config(

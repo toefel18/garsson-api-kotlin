@@ -1,16 +1,21 @@
 package nl.toefel.garsson.server.middleware
 
+import io.jsonwebtoken.ExpiredJwtException
+import io.jsonwebtoken.io.DecodingException
+import io.jsonwebtoken.security.SignatureException
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
-import mu.KLogging
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.dto.ApiError
 import nl.toefel.garsson.server.Status
 import nl.toefel.garsson.server.sendJson
+import org.slf4j.LoggerFactory
 
 class AuthHandler(val next: HttpHandler, val auth: JwtHmacAuthenticator) : HttpHandler {
 
-    companion object : KLogging()
+    companion object {
+        val logger = LoggerFactory.getLogger(AuthHandler::class.java)
+    }
 
     // allows for wrapping handlers defined as HttpServerExchange -> Unit
     constructor(next: (HttpServerExchange) -> Unit, auth: JwtHmacAuthenticator)
@@ -27,7 +32,7 @@ class AuthHandler(val next: HttpHandler, val auth: JwtHmacAuthenticator) : HttpH
                 exchange.putAttachment(Keys.USER_ATTACHMENT, user)
                 next.handleRequest(exchange)
             } catch (ex: Exception) {
-                logger.warn { "invalid Authorization header ${ex.message}" }
+                logger.warn("invalid Authorization header ${ex.message} ${ex.javaClass.simpleName}", ex)
                 exchange.sendJson(Status.BAD_REQUEST, ApiError("invalid token: ${ex.message}"))
             }
         }

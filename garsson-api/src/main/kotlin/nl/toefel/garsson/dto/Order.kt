@@ -12,7 +12,8 @@ data class Order(
         val createdTime: String?,
         val preparedTime: String? = null,
         val deliveredTime: String? = null,
-        val paidTime: String? = null
+        val paidTime: String? = null,
+        val state: State = State.CREATED
 )
 
 data class OrderLine(
