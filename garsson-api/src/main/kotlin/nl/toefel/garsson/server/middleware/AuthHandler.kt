@@ -1,12 +1,10 @@
 package nl.toefel.garsson.server.middleware
 
-import io.jsonwebtoken.ExpiredJwtException
-import io.jsonwebtoken.io.DecodingException
-import io.jsonwebtoken.security.SignatureException
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.dto.ApiError
+import nl.toefel.garsson.server.HandlerFun
 import nl.toefel.garsson.server.Status
 import nl.toefel.garsson.server.sendJson
 import org.slf4j.LoggerFactory
@@ -18,8 +16,8 @@ class AuthHandler(val next: HttpHandler, val auth: JwtHmacAuthenticator) : HttpH
     }
 
     // allows for wrapping handlers defined as HttpServerExchange -> Unit
-    constructor(next: (HttpServerExchange) -> Unit, auth: JwtHmacAuthenticator)
-            : this(HttpHandler { exchange -> next(exchange) }, auth)
+    constructor(next: HandlerFun, auth: JwtHmacAuthenticator)
+        : this(HttpHandler { exchange -> next(exchange) }, auth)
 
     override fun handleRequest(exchange: HttpServerExchange?) {
         val authHeader = exchange?.requestHeaders?.getFirst("Authorization")
@@ -29,7 +27,7 @@ class AuthHandler(val next: HttpHandler, val auth: JwtHmacAuthenticator) : HttpH
             val token = if (authHeader.startsWith("Bearer ")) authHeader.substring(7) else authHeader
             try {
                 val user = auth.extractUser(token)
-                exchange.putAttachment(Keys.USER_ATTACHMENT, user)
+                exchange.putAttachment(Attachments.USER, user)
                 next.handleRequest(exchange)
             } catch (ex: Exception) {
                 logger.warn("invalid Authorization header ${ex.message} ${ex.javaClass.simpleName}", ex)

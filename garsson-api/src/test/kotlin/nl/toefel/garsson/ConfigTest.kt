@@ -7,7 +7,7 @@ import io.kotlintest.specs.StringSpec
 
 internal class ConfigTest :StringSpec({
 
-    "toIntOrDefault should not return default on error" {
+    "toIntOrDefault should not return default on message" {
         "123".toIntOrDefault(8) shouldBe 123
         "".toIntOrDefault(8) shouldBe 8
         "-".toIntOrDefault(8) shouldBe 8

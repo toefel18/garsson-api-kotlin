@@ -30,7 +30,7 @@ class AuthTokenExtractor(private val auth: JwtHmacAuthenticator, val next: HttpH
             val token = if (authHeader.startsWith("Bearer ")) authHeader.substring(7) else authHeader
             try {
                 val user = auth.extractUser(token)
-                exchange.putAttachment(Keys.USER_ATTACHMENT, user)
+                exchange.putAttachment(Attachments.USER, user)
             } catch (ex: Exception) {
                 val authError = when (ex) {
                     is ExpiredJwtException -> "token expired"

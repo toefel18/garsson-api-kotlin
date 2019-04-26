@@ -1,11 +1,10 @@
 package nl.toefel.garsson.server
 
+import com.fasterxml.jackson.core.JsonParseException
 import io.undertow.Handlers
 import io.undertow.Undertow
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
-import io.undertow.server.handlers.BlockingHandler
-import io.undertow.util.Headers
 import io.undertow.util.HttpString
 import nl.toefel.garsson.Config
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
@@ -15,14 +14,18 @@ import nl.toefel.garsson.dto.LoginCredentials
 import nl.toefel.garsson.dto.SuccessfulLoginResponse
 import nl.toefel.garsson.dto.Version
 import nl.toefel.garsson.json.Jsonizer
-import nl.toefel.garsson.server.middleware.*
+import nl.toefel.garsson.server.middleware.AuthTokenExtractor
+import nl.toefel.garsson.server.middleware.CORSHandler
+import nl.toefel.garsson.server.middleware.ExceptionErrorHandler
+import nl.toefel.garsson.server.middleware.RequestLoggingHandler
+import java.lang.RuntimeException
 
 class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
 
     val undertow = Undertow.builder()
-            .addHttpListener(config.port, "0.0.0.0")
-            .setHandler(getRoutes())
-            .build()
+        .addHttpListener(config.port, "0.0.0.0")
+        .setHandler(getRoutes())
+        .build()
 
     fun start() {
         undertow.start()
@@ -33,27 +36,39 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
     }
 
     private fun getRoutes(): HttpHandler {
+        /**
+         * Keep in mind when chaining handlers that when leaf handlers do IO (.blocks) the exchange is dispatched
+         * a XNIO worker thread. This means that another thread continues the exchange and the the handler chain
+         * on the IO thread is returned. See [RequestLoggingHandler] or [ExceptionErrorHandler] for how they handle
+         * these cases.
+         */
         return RequestLoggingHandler(
+            ExceptionErrorHandler(
                 CORSHandler(
-                        AuthTokenExtractor(auth,
-                                Handlers.routing()
-                                        .get("/version", ::version)
-                                        .post("/api/v1/login", BlockingHandler(::login))
-                                        .get("/api/v1/products", RequireRole(listOf("user"), ::listProducts))
-                                        .get("/api/v1/orders", RequireRole(listOf("user"), ::listOrders))
-                                        .get("/api/v1/orders/{orderId}", RequireRole(listOf("user"), ::getOrder))
-                                        .setFallbackHandler(::fallback)
-                                        .setInvalidMethodHandler(::invalidMethod)
-                        )
+                    AuthTokenExtractor(auth,
+                        Handlers.routing()
+                            .get("/version", ::version)
+                            .post("/api/v1/login",::login.blocks)
+                            .get("/api/v1/products", ::listProducts.blocks requiresRole "user")
+                            .get("/api/v1/orders", ::listOrders requiresRole "user")
+                            .get("/api/v1/orders/{orderId}", ::getOrder requiresRole "user")
+                            .setFallbackHandler(::fallback)
+                            .setInvalidMethodHandler(::invalidMethod)
+                    )
                 )
+            )
         )
     }
 
     private fun login(exchange: HttpServerExchange) {
-        val credentials: LoginCredentials = Jsonizer.fromJson(exchange.inputStream.readAllBytes())
-        val jwt = auth.generateJwt(User(credentials.email, roles = listOf("user")))
-        exchange.responseHeaders.put(HttpString("Authorization"), "Bearer ${jwt}")
-        exchange.sendJson(200, SuccessfulLoginResponse(jwt))
+        try {
+            val credentials: LoginCredentials = Jsonizer.fromJson(exchange.inputStream.readAllBytes())
+            val jwt = auth.generateJwt(User(credentials.email, roles = listOf("user")))
+            exchange.responseHeaders.put(HttpString("Authorization"), "Bearer ${jwt}")
+            exchange.sendJson(200, SuccessfulLoginResponse(jwt))
+        } catch (ex : JsonParseException) {
+            exchange.sendJson(Status.BAD_REQUEST, ApiError("${ex.message}"))
+        }
     }
 
     private fun version(exchange: HttpServerExchange) {
@@ -81,26 +96,3 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
     }
 }
 
-fun HttpServerExchange.sendJson(code: Int, data: Any) {
-    this.statusCode = code
-    this.responseHeaders.put(Headers.CONTENT_TYPE, MediaTypes.APPLICATION_JSON)
-    val body = if (data is ApiError && data.status == -1) {
-        data.copy(status = this.statusCode).copy(uri = this.requestURI)
-    } else {
-        data
-    }
-    this.responseSender.send(Jsonizer.toJson(body))
-}
-
-object Status {
-    val OK = 200
-    val CREATED = 201
-    val NO_CONTENT = 204
-    val BAD_REQUEST = 400
-    val UNAUTHORIZED = 401
-    val FORBIDDEN = 403
-    val NOT_FOUND = 404
-    val METHOD_NOT_ALLOWED = 405
-    val UNSUPPORED_MEDIA_TYPE = 415
-    val INTERNAL_SERVER_ERROR = 500
-}
