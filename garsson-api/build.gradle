@@ -14,6 +14,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -31,7 +32,12 @@ dependencies {
 
     compile "io.undertow:undertow-core:2.0.20.Final"
     compile "io.undertow:undertow-websockets-jsr:2.0.20.Final"
+
+    // generate typescript typings
+    compile 'com.github.ntrrgc:ts-generator:1.1.1'
+
     testCompile 'io.kotlintest:kotlintest-runner-junit5:3.1.10'
+
 }
 
 gversion {
