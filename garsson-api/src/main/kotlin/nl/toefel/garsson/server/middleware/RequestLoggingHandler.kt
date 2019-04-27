@@ -8,30 +8,39 @@ import org.slf4j.LoggerFactory
 
 class RequestLoggingHandler(val next: HttpHandler) : HttpHandler {
     companion object {
-        val logger = LoggerFactory.getLogger(RequestLoggingHandler::class.java)
+        val logger = LoggerFactory.getLogger("[API]")
     }
 
     override fun handleRequest(exchange: HttpServerExchange?) {
         val start = System.currentTimeMillis()
 
         /**
-         * Required because requests with IO can be dispatched to worker threads
+         * Required because requests with IO are dispatched to worker threads
          */
-        exchange?.addExchangeCompleteListener {
-            completedExchange: HttpServerExchange?, nextListener: ExchangeCompletionListener.NextListener? ->
-            val method = completedExchange?.requestMethod
-            val status = completedExchange?.statusCode
-            val remoteHost = completedExchange?.sourceAddress?.address?.hostAddress + ":" + completedExchange?.sourceAddress?.port
-            val query = completedExchange?.queryString ?: ""
-            val requestUri = completedExchange?.requestURI + if (query.isNotEmpty()) "?$query" else ""
-            val duration = System.currentTimeMillis() - start
-            val user = completedExchange?.getAttachment(Attachments.USER)
-            val userName = " user=${user?.name ?: "anonymous"}"
-            val userRoles = " userRoles=[${user?.roles?.joinToString { it } ?: ""}]"
-            val exception = completedExchange?.getAttachment(EXCEPTION)
-            val exceptionMsg = if (exception == null) "" else " exception=${exception.message}"
+        exchange?.addExchangeCompleteListener { exch: HttpServerExchange?, nextListener: ExchangeCompletionListener.NextListener? ->
+            val method = exch?.requestMethod
+            val query = exch?.queryString ?: ""
 
-            logger.info("IN $method status=$status uri=$requestUri duration=$duration remoteHost=$remoteHost${userName}${userRoles}${exceptionMsg}")
+            val status = " status=${exch?.statusCode ?: -1}"
+            val remoteHost
+                = " remoteHost=${exch?.sourceAddress?.address?.hostAddress + ":" + exch?.sourceAddress?.port}"
+            val uri = " uri=${exch?.requestURI + if (query.isNotEmpty()) "?$query" else ""}"
+
+            val userEnity = exch?.getAttachment(Attachments.USER)
+            val user = " user=${userEnity?.name ?: "anonymous"}"
+            val roles = " userRoles=[${userEnity?.roles?.joinToString { it } ?: ""}]"
+
+            val exceptionAttachment = exch?.getAttachment(EXCEPTION)
+            val exception = if (exceptionAttachment == null) "" else " exception=`${exceptionAttachment.message}`"
+
+            // only log request and response bodies on errors, otherwise too much logging
+            val requestBodyAttachment = exch?.getAttachment(Attachments.REQUEST_BODY)
+            val requestBody = if (requestBodyAttachment != null && (exchange.statusCode > 299 || exchange.statusCode < 200)) " requestBody=`$requestBodyAttachment`" else ""
+            val responseBodyAttachment = exch?.getAttachment(Attachments.RESPONSE_BODY)
+            val responseBody = if (responseBodyAttachment != null && (exchange.statusCode > 299 || exchange.statusCode < 200)) " responseBody=`$responseBodyAttachment`" else ""
+
+            val duration = " duration=${System.currentTimeMillis() - start}"
+            logger.info("$method$status$uri$duration$user$roles$remoteHost$requestBody$responseBody$exception")
 
             nextListener?.proceed()
         }

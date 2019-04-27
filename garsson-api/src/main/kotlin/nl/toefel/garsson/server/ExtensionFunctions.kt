@@ -1,22 +1,50 @@
 package nl.toefel.garsson.server
 
+import com.fasterxml.jackson.core.JsonParseException
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
 import io.undertow.server.handlers.BlockingHandler
 import io.undertow.util.Headers
 import nl.toefel.garsson.dto.ApiError
 import nl.toefel.garsson.json.Jsonizer
+import nl.toefel.garsson.server.middleware.Attachments
 import nl.toefel.garsson.server.middleware.RequireRoleHandler
 
-fun HttpServerExchange.sendJson(code: Int, data: Any) {
+class BodyParseException(message: String, val body: ByteArray, cause: Exception): RuntimeException(message, cause)
+
+
+/** Unmarshals the request body to type [T] and attaches the the String representation to the exchange for logging by [RequestLoggingHandler] */
+inline fun <reified T> HttpServerExchange.readRequestBody(logOnError: Boolean = true): T {
+    val requestBody = this.inputStream.readAllBytes()
+    try {
+        if (logOnError) {
+            this.putAttachment(Attachments.REQUEST_BODY, String(requestBody))
+        }
+        // TODO add parsing based on Content-Type header, for now, assume JSON
+        return Jsonizer.fromJson(requestBody)
+    } catch (ex : JsonParseException) {
+        throw BodyParseException("Failed to parse request body to ${T::class.java.simpleName}", requestBody, ex)
+    }
+}
+
+/**
+ * Sends data marshaled as JSON and puts the String representation as an attachment to the exchange for logging by [RequestLoggingHandler].
+ *
+ * When data is [ApiError], status and uri will be overwritten with actual values.
+ */
+fun HttpServerExchange.sendJsonResponse(code: Int, data: Any) {
     this.statusCode = code
     this.responseHeaders.put(Headers.CONTENT_TYPE, MediaTypes.APPLICATION_JSON)
-    val body = if (data is ApiError && data.status == -1) {
-        data.copy(status = this.statusCode).copy(uri = this.requestURI)
+    val body = if (data is ApiError) {
+        data.copy(
+            status = this.statusCode,
+            uri = if (data.uri == "") this.requestURI else data.uri)
     } else {
         data
     }
-    this.responseSender.send(Jsonizer.toJson(body))
+    val response = Jsonizer.toJson(body)
+    this.putAttachment(Attachments.RESPONSE_BODY, response)
+    this.responseSender.send(response)
 }
 
 /** Alias for a handler that is a function reference */

@@ -5,6 +5,9 @@ import io.undertow.Handlers
 import io.undertow.Undertow
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
+import io.undertow.server.handlers.RequestDumpingHandler
+import io.undertow.server.handlers.StoredResponseHandler
+import io.undertow.server.handlers.form.EagerFormParsingHandler
 import io.undertow.util.HttpString
 import nl.toefel.garsson.Config
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
@@ -13,12 +16,10 @@ import nl.toefel.garsson.dto.ApiError
 import nl.toefel.garsson.dto.LoginCredentials
 import nl.toefel.garsson.dto.SuccessfulLoginResponse
 import nl.toefel.garsson.dto.Version
-import nl.toefel.garsson.json.Jsonizer
 import nl.toefel.garsson.server.middleware.AuthTokenExtractor
 import nl.toefel.garsson.server.middleware.CORSHandler
 import nl.toefel.garsson.server.middleware.ExceptionErrorHandler
 import nl.toefel.garsson.server.middleware.RequestLoggingHandler
-import java.lang.RuntimeException
 
 class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
 
@@ -48,8 +49,8 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
                     AuthTokenExtractor(auth,
                         Handlers.routing()
                             .get("/version", ::version)
-                            .post("/api/v1/login",::login.blocks)
-                            .get("/api/v1/products", ::listProducts.blocks requiresRole "user")
+                            .post("/api/v1/login", ::login.blocks)
+                            .get("/api/v1/products", ::listProducts.blocks)
                             .get("/api/v1/orders", ::listOrders requiresRole "user")
                             .get("/api/v1/orders/{orderId}", ::getOrder requiresRole "user")
                             .setFallbackHandler(::fallback)
@@ -62,37 +63,37 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
 
     private fun login(exchange: HttpServerExchange) {
         try {
-            val credentials: LoginCredentials = Jsonizer.fromJson(exchange.inputStream.readAllBytes())
+            val credentials: LoginCredentials = exchange.readRequestBody()
             val jwt = auth.generateJwt(User(credentials.email, roles = listOf("user")))
             exchange.responseHeaders.put(HttpString("Authorization"), "Bearer ${jwt}")
-            exchange.sendJson(200, SuccessfulLoginResponse(jwt))
-        } catch (ex : JsonParseException) {
-            exchange.sendJson(Status.BAD_REQUEST, ApiError("${ex.message}"))
+            exchange.sendJsonResponse(200, SuccessfulLoginResponse(jwt))
+        } catch (ex : BodyParseException) {
+            exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(ex.message!!))
         }
     }
 
     private fun version(exchange: HttpServerExchange) {
-        exchange.sendJson(200, Version.fromBuildInfo())
+        exchange.sendJsonResponse(200, Version.fromBuildInfo())
     }
 
     private fun listProducts(exchange: HttpServerExchange) {
-        exchange.sendJson(200, "list products")
+        exchange.sendJsonResponse(200, "list products")
     }
 
     private fun listOrders(exchange: HttpServerExchange) {
-        exchange.sendJson(200, listOf(createOrder("1"), createOrder("2")))
+        exchange.sendJsonResponse(200, listOf(createOrder("1"), createOrder("2")))
     }
 
     private fun getOrder(exchange: HttpServerExchange) {
-        exchange.sendJson(200, "get order ${exchange.queryParameters["orderId"]?.first}")
+        exchange.sendJsonResponse(200, "get order ${exchange.queryParameters["orderId"]?.first}")
     }
 
     private fun fallback(exchange: HttpServerExchange) {
-        exchange.sendJson(Status.NOT_FOUND, ApiError("request uri not found: ${exchange.requestURI}"))
+        exchange.sendJsonResponse(Status.NOT_FOUND, ApiError("request uri not found: ${exchange.requestURI}"))
     }
 
     private fun invalidMethod(exchange: HttpServerExchange) {
-        exchange.sendJson(Status.METHOD_NOT_ALLOWED, ApiError("method ${exchange.requestMethod} not supported on uri ${exchange.requestURI}"))
+        exchange.sendJsonResponse(Status.METHOD_NOT_ALLOWED, ApiError("method ${exchange.requestMethod} not supported on uri ${exchange.requestURI}"))
     }
 }
 

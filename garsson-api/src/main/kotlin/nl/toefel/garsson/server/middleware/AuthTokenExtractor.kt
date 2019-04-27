@@ -9,7 +9,7 @@ import io.undertow.server.HttpServerExchange
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.dto.ApiError
 import nl.toefel.garsson.server.Status
-import nl.toefel.garsson.server.sendJson
+import nl.toefel.garsson.server.sendJsonResponse
 import org.slf4j.LoggerFactory
 
 /**
@@ -40,7 +40,7 @@ class AuthTokenExtractor(private val auth: JwtHmacAuthenticator, val next: HttpH
                     else -> "invalid token"
                 }
                 logger.warn("$authError: ${ex.javaClass.simpleName}: ${ex.message}")
-                exchange.sendJson(Status.BAD_REQUEST, ApiError(authError))
+                exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(authError))
                 return
             }
         }

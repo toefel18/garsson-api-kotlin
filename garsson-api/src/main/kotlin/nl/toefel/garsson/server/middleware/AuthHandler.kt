@@ -6,7 +6,7 @@ import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.dto.ApiError
 import nl.toefel.garsson.server.HandlerFun
 import nl.toefel.garsson.server.Status
-import nl.toefel.garsson.server.sendJson
+import nl.toefel.garsson.server.sendJsonResponse
 import org.slf4j.LoggerFactory
 
 class AuthHandler(val next: HttpHandler, val auth: JwtHmacAuthenticator) : HttpHandler {
@@ -22,7 +22,7 @@ class AuthHandler(val next: HttpHandler, val auth: JwtHmacAuthenticator) : HttpH
     override fun handleRequest(exchange: HttpServerExchange?) {
         val authHeader = exchange?.requestHeaders?.getFirst("Authorization")
         if (authHeader == null) {
-            exchange!!.sendJson(Status.UNAUTHORIZED, ApiError("not authenticated, provide Authorization header with valid jwt"))
+            exchange!!.sendJsonResponse(Status.UNAUTHORIZED, ApiError("not authenticated, provide Authorization header with valid jwt"))
         } else {
             val token = if (authHeader.startsWith("Bearer ")) authHeader.substring(7) else authHeader
             try {
@@ -31,7 +31,7 @@ class AuthHandler(val next: HttpHandler, val auth: JwtHmacAuthenticator) : HttpH
                 next.handleRequest(exchange)
             } catch (ex: Exception) {
                 logger.warn("invalid Authorization header ${ex.message} ${ex.javaClass.simpleName}", ex)
-                exchange.sendJson(Status.BAD_REQUEST, ApiError("invalid token: ${ex.message}"))
+                exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError("invalid token: ${ex.message}"))
             }
         }
     }
