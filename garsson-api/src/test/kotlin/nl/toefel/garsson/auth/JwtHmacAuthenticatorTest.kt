@@ -7,6 +7,7 @@ import io.kotlintest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotlintest.shouldBe
 import io.kotlintest.shouldNotBe
 import io.kotlintest.specs.StringSpec
+import nl.toefel.garsson.dto.User
 import java.time.Duration
 
 

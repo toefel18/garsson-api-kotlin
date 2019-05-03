@@ -10,20 +10,22 @@ import java.time.LocalDateTime
 internal class GenerateTypings : StringSpec({
 
     "generate typings" {
-
+        println()
+        println()
         println(TypeScriptGenerator(
-                rootClasses = setOf(
-                        Order::class,
-                        ApiError::class,
-                        LoginCredentials::class,
-                        SuccessfulLoginResponse::class,
-                        QuantityUnit::class,
-                        Version::class
-                ),
-                mappings = mapOf(
-                        LocalDateTime::class to "Date",
-                        LocalDate::class to "Date"
-                )
+            rootClasses = setOf(
+                Order::class,
+                ApiError::class,
+                LoginCredentials::class,
+                SuccessfulLoginResponse::class,
+                QuantityUnit::class,
+                Version::class,
+                User::class
+            ),
+            mappings = mapOf(
+                LocalDateTime::class to "Date",
+                LocalDate::class to "Date"
+            )
         ).definitionsText)
     }
 

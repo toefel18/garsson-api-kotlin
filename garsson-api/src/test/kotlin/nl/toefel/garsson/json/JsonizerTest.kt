@@ -21,7 +21,7 @@ class JsonizerTest : StringSpec({
     }
 
     "fromJson" {
-        val data : SomeDto = Jsonizer.fromJson("""{"a":"hello","b":1234567}""")
+        val data: SomeDto = Jsonizer.fromJson("""{"a":"hello","b":1234567}""")
         data.a shouldEqual "hello"
         data.b shouldBe 1234567
     }

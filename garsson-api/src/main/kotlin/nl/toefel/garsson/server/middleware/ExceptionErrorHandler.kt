@@ -22,7 +22,7 @@ class ExceptionErrorHandler(val next: HttpHandler) : HttpHandler {
         try {
             exchange?.addDefaultResponseListener { exchangeInHandler ->
                 val ex = exchangeInHandler.getAttachment(DefaultResponseListener.EXCEPTION)
-                handleError(exchangeInHandler, ex)
+                if (ex != null) handleError(exchangeInHandler, ex) else false
             }
             next.handleRequest(exchange)
         } catch (ex: Throwable) {

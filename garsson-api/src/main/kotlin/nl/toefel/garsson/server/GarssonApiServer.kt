@@ -1,21 +1,14 @@
 package nl.toefel.garsson.server
 
-import com.fasterxml.jackson.core.JsonParseException
 import io.undertow.Handlers
 import io.undertow.Undertow
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
-import io.undertow.server.handlers.RequestDumpingHandler
-import io.undertow.server.handlers.StoredResponseHandler
-import io.undertow.server.handlers.form.EagerFormParsingHandler
 import io.undertow.util.HttpString
+import io.undertow.websockets.core.*
 import nl.toefel.garsson.Config
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
-import nl.toefel.garsson.auth.User
-import nl.toefel.garsson.dto.ApiError
-import nl.toefel.garsson.dto.LoginCredentials
-import nl.toefel.garsson.dto.SuccessfulLoginResponse
-import nl.toefel.garsson.dto.Version
+import nl.toefel.garsson.dto.*
 import nl.toefel.garsson.server.middleware.AuthTokenExtractor
 import nl.toefel.garsson.server.middleware.CORSHandler
 import nl.toefel.garsson.server.middleware.ExceptionErrorHandler
@@ -53,6 +46,7 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
                             .get("/api/v1/products", ::listProducts.blocks)
                             .get("/api/v1/orders", ::listOrders requiresRole "user")
                             .get("/api/v1/orders/{orderId}", ::getOrder requiresRole "user")
+                            .get("/api/v1/orders-updates", orderUpdates() requiresRole "user")
                             .setFallbackHandler(::fallback)
                             .setInvalidMethodHandler(::invalidMethod)
                     )
@@ -61,19 +55,55 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
         )
     }
 
+    val orderUpdateSockets = mutableListOf<WebSocketChannel>()
+
+    private fun orderUpdates(): HttpHandler {
+        return Handlers.websocket { exchange, channel ->
+            orderUpdateSockets.add(channel)
+
+            channel.addCloseTask { channel -> orderUpdateSockets.remove(channel) }
+
+            channel.receiveSetter.set { listener ->
+                object : AbstractReceiveListener() {
+                    override fun onFullTextMessage(channel: WebSocketChannel?, message: BufferedTextMessage?) {
+                        WebSockets.sendText("Hellow Undertow", channel, null)
+                    }
+                }
+            }
+
+            channel.resumeReceives()
+            WebSockets.sendText("Hellow Undertow2", channel, null)
+            Thread {
+                println("SLEEPING")
+                Thread.sleep(5000)
+                println("SENDING")
+                WebSockets.sendText("Hellow Undertowz", channel, object : WebSocketCallback<Void> {
+                    override fun complete(channel: WebSocketChannel?, context: Void?) {
+                        println("second send complete")
+                    }
+
+                    override fun onError(channel: WebSocketChannel?, context: Void?, throwable: Throwable?) {
+                        println("second send error")
+                        throwable?.printStackTrace()
+                    }
+                }) }.start()
+        }
+    }
+
+
+    private fun version(exchange: HttpServerExchange) {
+        exchange.sendJsonResponse(200, Version.fromBuildInfo())
+    }
+
     private fun login(exchange: HttpServerExchange) {
         try {
             val credentials: LoginCredentials = exchange.readRequestBody()
             val jwt = auth.generateJwt(User(credentials.email, roles = listOf("user")))
             exchange.responseHeaders.put(HttpString("Authorization"), "Bearer ${jwt}")
             exchange.sendJsonResponse(200, SuccessfulLoginResponse(jwt))
-        } catch (ex : BodyParseException) {
+        } catch (ex: BodyParseException) {
             exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(ex.message!!))
         }
-    }
-
-    private fun version(exchange: HttpServerExchange) {
-        exchange.sendJsonResponse(200, Version.fromBuildInfo())
     }
 
     private fun listProducts(exchange: HttpServerExchange) {
