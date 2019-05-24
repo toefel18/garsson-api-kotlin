@@ -5,7 +5,7 @@ jdk:
   - openjdk11
 
 script:
-  - cd garsson-api && ./gradlew build --scan -s  --console=plain
+  - cd garsson-api && ./gradlew build  --console=plain
 
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
