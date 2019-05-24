@@ -32,7 +32,7 @@ dependencies {
     runtime 'io.jsonwebtoken:jjwt-jackson:0.10.5'
 
     compile "io.undertow:undertow-core:2.0.20.Final"
-    compile "io.undertow:undertow-websockets-jsr:2.0.20.Final"
+    compile "io.undertow:undertow-websockets-jsr:2.0.21.Final"
 
     // generate typescript typings
     compile 'com.github.ntrrgc:ts-generator:1.1.1'
