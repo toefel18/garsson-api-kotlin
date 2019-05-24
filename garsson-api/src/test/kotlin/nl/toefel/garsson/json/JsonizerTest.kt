@@ -1,7 +1,6 @@
 package nl.toefel.garsson.json
 
 import io.kotlintest.shouldBe
-import io.kotlintest.shouldEqual
 import io.kotlintest.specs.StringSpec
 
 
@@ -22,7 +21,7 @@ class JsonizerTest : StringSpec({
 
     "fromJson" {
         val data: SomeDto = Jsonizer.fromJson("""{"a":"hello","b":1234567}""")
-        data.a shouldEqual "hello"
+        data.a shouldBe "hello"
         data.b shouldBe 1234567
     }
 })
