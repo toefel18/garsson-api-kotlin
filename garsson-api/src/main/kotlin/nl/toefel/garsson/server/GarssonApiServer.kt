@@ -86,7 +86,8 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
                         println("second send error")
                         throwable?.printStackTrace()
                     }
-                }) }.start()
+                })
+            }.start()
         }
     }
 
@@ -111,7 +112,16 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
     }
 
     private fun listOrders(exchange: HttpServerExchange) {
-        exchange.sendJsonResponse(200, listOf(createOrder("1"), createOrder("2")))
+        exchange.sendJsonResponse(200, listOf(
+            createOrder("1"),
+            createOrder("2"),
+            createOrder("3"),
+            createOrder("4"),
+            createOrder("5"),
+            createOrder("6"),
+            createOrder("8"),
+            createOrder("9"),
+            createOrder("10")))
     }
 
     private fun getOrder(exchange: HttpServerExchange) {

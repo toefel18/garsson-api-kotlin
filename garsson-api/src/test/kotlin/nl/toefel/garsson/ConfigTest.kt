@@ -16,7 +16,7 @@ internal class ConfigTest : StringSpec({
     "Config.fromEnvironment" {
         val cfg = Config.fromEnvironment()
         cfg.port shouldBe 8080
-        cfg.jwtSigningSecret shouldBe "jwt_secret_for_test"
+        cfg.jwtSigningSecret shouldBe "jwt_secret_for_tests"
     }
 
     "safeForLogging should gray out secrets" {
