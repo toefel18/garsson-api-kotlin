@@ -9,10 +9,17 @@ import io.undertow.websockets.core.*
 import nl.toefel.garsson.Config
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.dto.*
+import nl.toefel.garsson.repository.UserEntity
+import nl.toefel.garsson.repository.UsersTable
 import nl.toefel.garsson.server.middleware.AuthTokenExtractor
 import nl.toefel.garsson.server.middleware.CORSHandler
 import nl.toefel.garsson.server.middleware.ExceptionErrorHandler
 import nl.toefel.garsson.server.middleware.RequestLoggingHandler
+import org.jetbrains.exposed.sql.transactions.transaction
+import java.time.OffsetDateTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
 
 class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
 
@@ -99,9 +106,20 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
     private fun login(exchange: HttpServerExchange) {
         try {
             val credentials: LoginCredentials = exchange.readRequestBody()
-            val jwt = auth.generateJwt(User(credentials.email, roles = listOf("user")))
-            exchange.responseHeaders.put(HttpString("Authorization"), "Bearer ${jwt}")
-            exchange.sendJsonResponse(200, SuccessfulLoginResponse(jwt))
+
+            transaction {
+                val user = UserEntity.find { UsersTable.email eq credentials.email}.firstOrNull()
+                when {
+                    user == null -> exchange.sendJsonResponse(Status.UNAUTHORIZED, ApiError("user not found"))
+                    user.password == credentials.password -> {
+                        user.lastLoginTime = OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toString()
+                        val jwt = auth.generateJwt(User(credentials.email, roles = user.roles.split(",").toList()))
+                        exchange.responseHeaders.put(HttpString("Authorization"), "Bearer $jwt")
+                        exchange.sendJsonResponse(Status.OK, SuccessfulLoginResponse(jwt))
+                    }
+                    else -> exchange.sendJsonResponse(Status.UNAUTHORIZED, ApiError("invalid password"))
+                }
+            }
         } catch (ex: BodyParseException) {
             exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(ex.message!!))
         }

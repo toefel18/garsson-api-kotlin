@@ -14,22 +14,22 @@ import org.hamcrest.MatcherAssert.assertThat
 class LoginIntegrationTest : ApplicationRestTest, FunSpec() {
     override fun listeners(): List<TestListener> = listOf(ApplicationTest)
 
-    val email = "test-user@domain.com"
+    val email = "test@dummy.nl"
 
     init {
         test("Login should provide valid JWT") {
-            val credentials = LoginCredentials(email, "chicken")
+            val credentials = LoginCredentials(email, "test")
             val responseBody = post("/api/v1/login", credentials)
                 .statusCode(200)
                 .header("Authorization", startsWith("Bearer ey"))
                 .body("token", startsWith("ey"))
                 .extract().body().`as`(SuccessfulLoginResponse::class.java)
 
-            validateJwt(responseBody.token, ApplicationTest.config.jwtSigningSecret, email)
+            validateJwt(responseBody.token, email)
         }
     }
 
-    private fun validateJwt(token: String, secret: String, email: String) {
+    private fun validateJwt(token: String, email: String) {
         val user = ApplicationTest.server?.auth?.extractUser(token)!!
 
         assertThat(user.name, equalTo(email))
