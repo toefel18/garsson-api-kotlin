@@ -29,5 +29,6 @@ interface ApplicationRestTest {
     fun post(uri: String, data:Any) = RestAssured.given().log().all()
         .contentType("application/json")
         .body(data)
-        .post("http://localhost:${ApplicationTest.config!!.port}$uri").then().log().all()
+        .post("http://localhost:${ApplicationTest.config!!.port}$uri")
+        .then().log().all()
 }

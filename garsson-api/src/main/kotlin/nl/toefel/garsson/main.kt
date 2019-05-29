@@ -26,15 +26,7 @@ fun main(args: Array<String>) {
 
     // create connection which can be used via
     // transaction {} in code
-    val exposedDb = Database.connect(ds)
-
-//    transaction {
-//        UsersTable.selectAll().forEach {
-//            println(it[UsersTable.email])
-//        }
-//        val result = UserEntity.find{UsersTable.email eq "toefel18@gmail.com"}.firstOrNull()
-//        println(result?.password)
-//    }
+    Database.connect(ds)
 
     val auth = JwtHmacAuthenticator(config.jwtSigningSecret, config.tokenValidity)
 

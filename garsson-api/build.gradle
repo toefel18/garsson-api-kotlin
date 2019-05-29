@@ -22,6 +22,12 @@ repositories {
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib"
     compile "org.jetbrains.kotlin:kotlin-reflect"
+    implementation platform("com.fasterxml.jackson:jackson-bom:2.9.9")
+
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.6'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.6'
+    compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.6'
+
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
 
     compile "org.slf4j:slf4j-api:1.7.26"
@@ -74,4 +80,11 @@ project.compileKotlin.dependsOn(addBranchToVersionFile)
 
 test {
     useJUnitPlatform()
+}
+
+test {
+    testLogging {
+        events "started", "passed", "skipped", "failed", "standardOut", "standardError"
+        exceptionFormat "full"
+    }
 }

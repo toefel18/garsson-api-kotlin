@@ -6,9 +6,9 @@ package nl.toefel.garsson
 const val MAVEN_GROUP = ""
 const val MAVEN_NAME = "garsson-api"
 const val VERSION = "unspecified"
-const val GIT_REVISION = 33
-const val GIT_SHA = "8301e6a2712193a0752d5fcf7e7ede180f4e7b57"
-const val GIT_DATE = "2019-05-25T14:43:56Z"
-const val BUILD_DATE = "2019-05-26T17:15:45Z"
-const val BUILD_UNIX_TIME = 1558890945978L
+const val GIT_REVISION = 39
+const val GIT_SHA = "49cadbdfdac6e0fe9391e43e27dfccb70c491d67"
+const val GIT_DATE = "2019-05-29T21:45:36Z"
+const val BUILD_DATE = "2019-05-29T22:32:44Z"
+const val BUILD_UNIX_TIME = 1559169164508L
 const val GIT_BRANCH = "master"

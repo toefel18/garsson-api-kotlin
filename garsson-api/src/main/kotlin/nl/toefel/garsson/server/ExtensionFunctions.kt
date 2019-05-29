@@ -1,6 +1,7 @@
 package nl.toefel.garsson.server
 
 import com.fasterxml.jackson.core.JsonParseException
+import com.fasterxml.jackson.module.kotlin.MissingKotlinParameterException
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
 import io.undertow.server.handlers.BlockingHandler
@@ -24,6 +25,8 @@ inline fun <reified T> HttpServerExchange.readRequestBody(logOnError: Boolean = 
         return Jsonizer.fromJson(requestBody)
     } catch (ex : JsonParseException) {
         throw BodyParseException("Failed to parse request body to ${T::class.java.simpleName}", requestBody, ex)
+    } catch (ex: MissingKotlinParameterException) {
+        throw BodyParseException("Failed to parse request body to ${T::class.java.simpleName}, missing property ${ex.parameter.name}", requestBody, ex)
     }
 }
 
