@@ -4,59 +4,72 @@ import io.kotlintest.Description
 import io.kotlintest.TestResult
 import io.kotlintest.extensions.TestListener
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
-import nl.toefel.garsson.repository.UserEntity
-import nl.toefel.garsson.repository.UsersTable
 import nl.toefel.garsson.server.GarssonApiServer
-import org.h2.jdbcx.JdbcDataSource
-import org.h2.tools.RunScript
-import org.h2.tools.Server
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.net.ServerSocket
-import org.h2.tools.Server.createWebServer
-import java.io.FileReader
 
-
+/**
+ * Before the tests it:
+ * 1. Starts a postgresql container and migrates the schema (requires Docker!)
+ * 2. starts the complete application and connects it to the postgresql container
+ *
+ * After the test it:
+ * 1. shuts down the server
+ * 2. shuts down postgresql
+ */
 object ApplicationTest : TestListener {
 
     val logger = LoggerFactory.getLogger("boot")
+
+    var postgres: KGenericContainer? = null
+    var config: Config? = null
     var server: GarssonApiServer? = null
-    val dbPort = getAvailablePort().toString()
-    val db = Server.createTcpServer("-tcpPort", dbPort, "-tcpAllowOthers")
-    val config = Config.fromEnvironment().copy(
-        port = getAvailablePort(),
-        datasourceUrl = "jdbc:h2:tcp://127.0.0.1:$dbPort",
-        datasourceDriverClassName = "org.h2.Driver",
-        datasourceUser = "sa",
-        datasourcePassword = "sa"
-        )
 
     override fun beforeTest(description: Description) {
         server?.stop()
-        db.start()
-        val ds = createHikariDataSource(config)
+        postgres?.stop()
 
-        migrate(ds)
-        Database.Companion.connect(ds)
+        logger.info("Starting postgres in test")
 
-        transaction {
-            UserEntity.all().forEach { println("JAAAAAAAAAAAAAAAAAA" + it.email) }
-        }
+        postgres = KGenericContainer("postgres")
+            .withEnv("POSTGRES_USER", "garsson-api")
+            .withEnv("POSTGRES_PASSWORD", "garsson-api")
+            .withExposedPorts(5432)
 
-        logger.info("Starting application for test")
+        postgres!!.start()
+
+        config = Config.fromEnvironment().copy(
+            port = getAvailablePort(),
+            datasourceUrl = "jdbc:postgresql://127.0.0.1:${postgres!!.getMappedPort(5432)}/garsson-api")
+
         logger.info("Config: $config")
 
-        val auth = JwtHmacAuthenticator(config.jwtSigningSecret, config.tokenValidity)
-        server = GarssonApiServer(config, auth)
+        logger.info("Creating data source")
+
+        val ds = createHikariDataSource(config!!)
+
+        logger.info("Migrating schema")
+        migrate(ds)
+
+        logger.info("Preparing connection for the application to use")
+        Database.connect(ds)
+
+        logger.info("Starting application for test")
+        val auth = JwtHmacAuthenticator(config!!.jwtSigningSecret, config!!.tokenValidity)
+        server = GarssonApiServer(config!!, auth)
         server?.start()
+
+        logger.info("Started!")
         Runtime.getRuntime().addShutdownHook(Thread(Runnable { server?.stop() }))
+        Runtime.getRuntime().addShutdownHook(Thread(Runnable { postgres?.stop() }))
     }
 
     override fun afterTest(description: Description, result: TestResult) {
         logger.info("Stopping application")
         server?.stop()
-        db.stop()
+        logger.info("Stopping postgres")
+        postgres?.stop()
     }
 
     fun getAvailablePort(): Int = ServerSocket(0).use { socket -> return socket.localPort }

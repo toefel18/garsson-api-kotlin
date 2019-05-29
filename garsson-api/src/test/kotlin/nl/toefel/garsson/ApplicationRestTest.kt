@@ -23,11 +23,11 @@ import io.restassured.RestAssured
 interface ApplicationRestTest {
 
     fun get(uri: String) = RestAssured.given().log().all()
-        .get("http://localhost:${ApplicationTest.config.port}$uri")
+        .get("http://localhost:${ApplicationTest.config!!.port}$uri")
         .then().log().all()
 
     fun post(uri: String, data:Any) = RestAssured.given().log().all()
         .contentType("application/json")
         .body(data)
-        .post("http://localhost:${ApplicationTest.config.port}$uri").then().log().all()
+        .post("http://localhost:${ApplicationTest.config!!.port}$uri").then().log().all()
 }
