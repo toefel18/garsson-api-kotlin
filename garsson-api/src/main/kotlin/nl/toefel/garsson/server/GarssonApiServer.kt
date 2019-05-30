@@ -9,6 +9,8 @@ import io.undertow.websockets.core.*
 import nl.toefel.garsson.Config
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.dto.*
+import nl.toefel.garsson.repository.ProductEntity
+import nl.toefel.garsson.repository.ProductsTable
 import nl.toefel.garsson.repository.UserEntity
 import nl.toefel.garsson.repository.UsersTable
 import nl.toefel.garsson.server.middleware.AuthTokenExtractor
@@ -126,7 +128,22 @@ class GarssonApiServer(val config: Config, val auth: JwtHmacAuthenticator) {
     }
 
     private fun listProducts(exchange: HttpServerExchange) {
-        exchange.sendJsonResponse(200, "list products")
+        val allProductsDtos = transaction {
+            val allProducts = ProductEntity.all()
+            allProducts.map { product -> Product(
+                id = product.id.value,
+                name = product.name,
+                brand = product.brand,
+                barcode = product.barcode,
+                unit = product.unit,
+                pricePerUnit = product.pricePerUnit.setScale(2).toString(),
+                purchasePricePerUnit = product.purchasePricePerUnit?.setScale(2).toString(),
+                createdTime = product.createdTime,
+                lastEditTime = product.lastEditTime
+            ) }
+        }
+
+        exchange.sendJsonResponse(200, allProductsDtos)
     }
 
     private fun listOrders(exchange: HttpServerExchange) {

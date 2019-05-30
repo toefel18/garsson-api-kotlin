@@ -1,15 +1,11 @@
 package nl.toefel.garsson
 
 //import mu.NamedKLogging
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
-import nl.toefel.garsson.repository.UserEntity
-import nl.toefel.garsson.repository.UsersTable
+import nl.toefel.garsson.repository.ProductsTable
 import nl.toefel.garsson.server.GarssonApiServer
-import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
@@ -27,6 +23,12 @@ fun main(args: Array<String>) {
     // create connection which can be used via
     // transaction {} in code
     Database.connect(ds)
+
+//    transaction {
+//        println(SchemaUtils.createStatements(ProductsTable))
+//    }
+//
+//    System.exit(0)
 
     val auth = JwtHmacAuthenticator(config.jwtSigningSecret, config.tokenValidity)
 

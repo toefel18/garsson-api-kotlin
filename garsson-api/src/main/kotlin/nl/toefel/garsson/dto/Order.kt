@@ -18,20 +18,12 @@ data class Order(
 
 data class OrderLine(
     val quantity: Int = 1,
-    val product: Product
-)
-
-data class Product(
     val productId: String,
+    val productName: String,
+    val productBrand: String,
     val productPrice: Double,
-    val quantityUnit: QuantityUnit
+    val quantityUnit: String
 )
-
-enum class QuantityUnit {
-    ITEM,
-    LITER,
-    GRAM
-}
 
 enum class State {
     CREATED,
