@@ -37,7 +37,7 @@ inline fun <reified T> HttpServerExchange.readRequestBody(logOnError: Boolean = 
  */
 fun HttpServerExchange.sendJsonResponse(code: Int, data: Any) {
     this.statusCode = code
-    this.responseHeaders.put(Headers.CONTENT_TYPE, MediaTypes.APPLICATION_JSON)
+    this.responseHeaders.put(Headers.CONTENT_TYPE, MediaType.APPLICATION_JSON)
     val body = if (data is ApiError) {
         data.copy(
             status = this.statusCode,

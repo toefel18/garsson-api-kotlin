@@ -5,7 +5,6 @@ import io.kotlintest.specs.FunSpec
 import nl.toefel.garsson.ApplicationRestTest
 import nl.toefel.garsson.ApplicationTest
 import nl.toefel.garsson.dto.Product
-import nl.toefel.garsson.dto.SuccessfulLoginResponse
 import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.CoreMatchers.equalTo
 import org.hamcrest.Matchers.greaterThan
@@ -16,7 +15,7 @@ class ProductIntegrationTest : ApplicationRestTest, FunSpec() {
     override fun listeners(): List<TestListener> = listOf(ApplicationTest)
 
     init {
-        test("Valid login should provide valid JWT in response and Authorization header") {
+        test("Create a product") {
             val product = createProduct("Radler", "Grols")
 
             post("/api/v1/products", product)
@@ -30,6 +29,22 @@ class ProductIntegrationTest : ApplicationRestTest, FunSpec() {
                 .body("purchasePricePerUnit", equalTo("1.75"))
                 .body("createdTime", containsString(LocalDate.now().year.toString()))
                 .body("lastEditTime", containsString(LocalDate.now().year.toString()))
+
+        }
+
+        test("Missing required properties should error") {
+            val productMissingName = """{
+                "brand": "Coca Cola",
+                "barcode": "123",
+                "unit": "BOTTLE",
+                "pricePerUnit": "3.75",
+                "purchasePricePerUnit": "1.75"
+            }"""
+
+            post("/api/v1/products", productMissingName)
+                .statusCode(400)
+                .contentType("application/json")
+                .body("message", containsString("Failed to parse request body to Product, missing property name"))
 
         }
 
@@ -65,7 +80,7 @@ class ProductIntegrationTest : ApplicationRestTest, FunSpec() {
                 .contentType("application/json")
         }
 
-        test("Create -> update -> Delete product") {
+        test("Create -> update -> read -> delete product") {
             val product = createProduct("Fanta", "Nestle")
 
             val productResponse = post("/api/v1/products", product)

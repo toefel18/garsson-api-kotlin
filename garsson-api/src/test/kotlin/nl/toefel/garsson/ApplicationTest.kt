@@ -4,7 +4,7 @@ import io.kotlintest.Description
 import io.kotlintest.TestResult
 import io.kotlintest.extensions.TestListener
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
-import nl.toefel.garsson.server.GarssonApiServer
+import nl.toefel.garsson.server.GarssonRouter
 import org.jetbrains.exposed.sql.Database
 import org.slf4j.LoggerFactory
 import java.net.ServerSocket
@@ -24,7 +24,7 @@ object ApplicationTest : TestListener {
 
     var postgres: KGenericContainer? = null
     var config: Config? = null
-    var server: GarssonApiServer? = null
+    var server: GarssonRouter? = null
 
     override fun beforeTest(description: Description) {
         server?.stop()
@@ -57,7 +57,7 @@ object ApplicationTest : TestListener {
 
         logger.info("Starting application for test")
         val auth = JwtHmacAuthenticator(config!!.jwtSigningSecret, config!!.tokenValidity)
-        server = GarssonApiServer(config!!, auth)
+        server = GarssonRouter(config!!, auth)
         server?.start()
 
         logger.info("Started!")

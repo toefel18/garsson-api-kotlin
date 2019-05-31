@@ -5,3 +5,4 @@ out/
 garsson-api.iml
 garsson-api.ipr
 garsson-api.iws
+.kotlintest
