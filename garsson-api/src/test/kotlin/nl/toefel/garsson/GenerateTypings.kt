@@ -18,7 +18,7 @@ internal class GenerateTypings : StringSpec({
                 ApiError::class,
                 LoginCredentials::class,
                 SuccessfulLoginResponse::class,
-                QuantityUnit::class,
+                Product::class,
                 Version::class,
                 User::class
             ),

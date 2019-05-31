@@ -31,4 +31,14 @@ interface ApplicationRestTest {
         .body(data)
         .post("http://localhost:${ApplicationTest.config!!.port}$uri")
         .then().log().all()
+
+    fun put(uri: String, data:Any) = RestAssured.given().log().all()
+        .contentType("application/json")
+        .body(data)
+        .put("http://localhost:${ApplicationTest.config!!.port}$uri")
+        .then().log().all()
+
+    fun delete(uri: String) = RestAssured.given().log().all()
+        .delete("http://localhost:${ApplicationTest.config!!.port}$uri")
+        .then().log().all()
 }
