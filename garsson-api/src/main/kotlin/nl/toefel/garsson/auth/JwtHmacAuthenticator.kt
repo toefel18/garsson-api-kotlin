@@ -33,7 +33,8 @@ class JwtHmacAuthenticator(signSecret: String, val tokenValidity: Duration) {
             .setSigningKey(sigingKey)
             .parseClaimsJws(jwt)
 
-        val roles: List<String> = parsedJwt.body?.get("roles", List::class.java) as List<String>? ?: listOf()
+        @Suppress("UNCHECKED_CAST") val roles: List<String> = parsedJwt.body?.get("roles", List::class.java) as List<String>?
+            ?: listOf()
 
         return User(parsedJwt.body.subject, roles = roles)
     }

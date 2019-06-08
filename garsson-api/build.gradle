@@ -24,9 +24,9 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-reflect"
     implementation platform("com.fasterxml.jackson:jackson-bom:2.9.9")
 
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.6'
-    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.6'
-    compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.6'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.9'
+    compile 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.9'
+    compile 'com.fasterxml.jackson.module:jackson-module-parameter-names:2.9.9'
 
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.+"
 
