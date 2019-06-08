@@ -7,6 +7,7 @@ import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.server.GarssonRouter
 import org.jetbrains.exposed.sql.Database
 import org.slf4j.LoggerFactory
+import org.testcontainers.containers.wait.strategy.Wait
 import java.net.ServerSocket
 
 /**
@@ -36,6 +37,7 @@ object ApplicationTest : TestListener {
             .withEnv("POSTGRES_USER", "garsson-api")
             .withEnv("POSTGRES_PASSWORD", "garsson-api")
             .withExposedPorts(5432)
+            .waitingFor(Wait.forListeningPort())
 
         postgres!!.start()
 
