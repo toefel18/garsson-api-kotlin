@@ -21,6 +21,11 @@ val defaultBackoffSequence = listOf<Duration>(
 
 val logger: Logger = LoggerFactory.getLogger("DataSource.kt")
 
+/**
+ * Creates a HikariDataSource and returns it. If any exception is thrown, the operation is retried according
+ * to the provided backoff sequence. If the sequence runs out of entries, the operation fails with the last
+ * encountered exception.
+ */
 tailrec fun createHikariDataSource(cfg: Config, backoffSequence: List<Duration> = defaultBackoffSequence): HikariDataSource {
     try {
         val config = HikariConfig()
