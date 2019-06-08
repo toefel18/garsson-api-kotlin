@@ -6,3 +6,4 @@ garsson-api.iml
 garsson-api.ipr
 garsson-api.iws
 .kotlintest
+src/main/kotlin/nl/toefel/garsson/BuildInfo.kt
