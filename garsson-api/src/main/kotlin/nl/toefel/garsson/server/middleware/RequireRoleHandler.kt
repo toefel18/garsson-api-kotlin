@@ -6,12 +6,13 @@ import nl.toefel.garsson.dto.ApiError
 import nl.toefel.garsson.server.HandlerFun
 import nl.toefel.garsson.server.Status
 import nl.toefel.garsson.server.sendJsonResponse
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class RequireRoleHandler(val requiredRoles: List<String>, val next: HttpHandler) : HttpHandler {
 
     companion object {
-        val logger = LoggerFactory.getLogger(RequireRoleHandler::class.java)
+        val logger: Logger = LoggerFactory.getLogger(RequireRoleHandler::class.java)
     }
 
     // allows for wrapping handlers defined as HttpServerExchange -> Unit

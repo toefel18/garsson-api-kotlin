@@ -4,11 +4,12 @@ import io.undertow.server.DefaultResponseListener.EXCEPTION
 import io.undertow.server.ExchangeCompletionListener
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class RequestLoggingHandler(val next: HttpHandler) : HttpHandler {
     companion object {
-        val logger = LoggerFactory.getLogger("[API]")
+        val logger: Logger = LoggerFactory.getLogger("[API]")
     }
 
     override fun handleRequest(exchange: HttpServerExchange?) {

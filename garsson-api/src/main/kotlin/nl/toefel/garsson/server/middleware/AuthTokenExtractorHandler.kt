@@ -10,6 +10,7 @@ import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.dto.ApiError
 import nl.toefel.garsson.server.Status
 import nl.toefel.garsson.server.sendJsonResponse
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 /**
@@ -18,10 +19,10 @@ import org.slf4j.LoggerFactory
  * Does not fail if the header is not present!
  * Only fails if the authorization is malformed, has the wrong signature, is expired or is not active yet.
  */
-class AuthTokenExtractor(private val auth: JwtHmacAuthenticator, val next: HttpHandler) : HttpHandler {
+class AuthTokenExtractorHandler(private val auth: JwtHmacAuthenticator, val next: HttpHandler) : HttpHandler {
 
     companion object {
-        val logger = LoggerFactory.getLogger(AuthTokenExtractor::class.java)
+        val logger: Logger = LoggerFactory.getLogger(AuthTokenExtractorHandler::class.java)
     }
 
     override fun handleRequest(exchange: HttpServerExchange?) {

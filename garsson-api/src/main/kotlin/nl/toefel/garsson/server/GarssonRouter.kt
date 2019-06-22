@@ -7,9 +7,9 @@ import io.undertow.server.HttpHandler
 import nl.toefel.garsson.Config
 import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.server.handlers.*
-import nl.toefel.garsson.server.middleware.AuthTokenExtractor
+import nl.toefel.garsson.server.middleware.AuthTokenExtractorHandler
 import nl.toefel.garsson.server.middleware.CORSHandler
-import nl.toefel.garsson.server.middleware.ExceptionErrorHandler
+import nl.toefel.garsson.server.middleware.UnexpectedErrorHandler
 import nl.toefel.garsson.server.middleware.RequestLoggingHandler
 import org.slf4j.LoggerFactory
 
@@ -50,28 +50,28 @@ class GarssonRouter(private val config: Config, val auth: JwtHmacAuthenticator) 
         /**
          * Keep in mind when chaining handlers that when leaf handlers do IO (.blocks) the exchange is dispatched
          * a XNIO worker thread. This means that another thread continues the exchange and the the handler chain
-         * on the IO thread is returned. See [RequestLoggingHandler] or [ExceptionErrorHandler] for how they handle
+         * on the IO thread is returned. See [RequestLoggingHandler] or [UnexpectedErrorHandler] for how they handle
          * these cases.
          */
         return RequestLoggingHandler(
-            ExceptionErrorHandler(
+            UnexpectedErrorHandler(
                 CORSHandler(
-                    AuthTokenExtractor(auth,
+                    AuthTokenExtractorHandler(auth,
                         Handlers.routing()
                             .get("/version", version())
                             .get("/statistics", statistics(this))
 
-                            .post("/api/v1/login", login(auth).blocks)
+                            .post("/api/v1/login", login(auth).basicErrors.blocks)
 
-                            .get("/api/v1/products", listProducts().blocks)
-                            .post("/api/v1/products", addProduct().blocks)
-                            .get("/api/v1/products/{productId}", getProduct().blocks)
-                            .put("/api/v1/products/{productId}", updateProduct().blocks)
-                            .delete("/api/v1/products/{productId}", deleteProduct().blocks)
+                            .get("/api/v1/products", listProducts().basicErrors.blocks)
+                            .post("/api/v1/products", addProduct().basicErrors.blocks)
+                            .get("/api/v1/products/{productId}", getProduct().basicErrors.blocks)
+                            .put("/api/v1/products/{productId}", updateProduct().basicErrors.blocks)
+                            .delete("/api/v1/products/{productId}", deleteProduct().basicErrors.blocks)
 
-                            .get("/api/v1/orders", listOrders() requiresRole "user")
-                            .get("/api/v1/orders/{orderId}", getOrder() requiresRole "user")
-                            .get("/api/v1/orders-updates", orderUpdates() requiresRole "user")
+                            .get("/api/v1/orders", listOrders().basicErrors requiresRole "user")
+                            .get("/api/v1/orders/{orderId}", getOrder().basicErrors requiresRole "user")
+                            .get("/api/v1/orders-updates", orderUpdates().basicErrors requiresRole "user")
 
                             .setFallbackHandler(fallback())
                             .setInvalidMethodHandler(invalidMethod())

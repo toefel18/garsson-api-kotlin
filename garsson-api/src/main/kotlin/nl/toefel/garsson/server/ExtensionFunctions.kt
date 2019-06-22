@@ -9,10 +9,8 @@ import io.undertow.util.Headers
 import nl.toefel.garsson.dto.ApiError
 import nl.toefel.garsson.json.Jsonizer
 import nl.toefel.garsson.server.middleware.Attachments
+import nl.toefel.garsson.server.middleware.BasicErrorHandler
 import nl.toefel.garsson.server.middleware.RequireRoleHandler
-
-class BodyParseException(message: String, val body: ByteArray, cause: Exception) : RuntimeException(message, cause)
-
 
 /** Unmarshals the request body to type [T] and attaches the the String representation to the exchange for logging by [RequestLoggingHandler] */
 inline fun <reified T> HttpServerExchange.readRequestBody(logOnError: Boolean = true): T {
@@ -55,7 +53,7 @@ fun HttpServerExchange.requireParam(name: String): String =
 
 fun HttpServerExchange.requireParamAsLong(name: String): Long {
     val param = requireParam(name)
-    return param.toLongOrNull() ?: throw InvalidRequiredParameter(name, "Long", param)
+    return param.toLongOrNull() ?: throw InvalidParameterFormat(name, "Long", param)
 }
 
 /** Alias for a handler that is a function reference */
@@ -73,3 +71,9 @@ val HttpHandler.blocks get() = BlockingHandler(this)
 /** Wraps the handler in a BlockingHandler (a blocking handler dispatches the request to a worker thread) */
 val HandlerFun.blocks get() = BlockingHandler(this)
 
+
+/** Wraps the handler in a BlockingHandler (a blocking handler dispatches the request to a worker thread) */
+val HttpHandler.basicErrors get() = BasicErrorHandler(this)
+
+/** Wraps the handler in a BlockingHandler (a blocking handler dispatches the request to a worker thread) */
+val HandlerFun.basicErrors get() = BasicErrorHandler(this)
