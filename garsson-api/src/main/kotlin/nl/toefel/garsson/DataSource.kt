@@ -5,19 +5,10 @@ import com.zaxxer.hikari.HikariDataSource
 import org.flywaydb.core.Flyway
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.time.Duration
-import java.time.Duration.ofSeconds
 import javax.sql.DataSource
 
-val defaultBackoffSequence = listOf<Duration>(
-    ofSeconds(1),
-    ofSeconds(2),
-    ofSeconds(5),
-    ofSeconds(10),
-    ofSeconds(10),
-    ofSeconds(10),
-    ofSeconds(10)
-)
+const val maxBackoffMs = 8000L
+val defaultBackoffMsSequence = generateSequence(1000L) { Math.min(it * 2, maxBackoffMs)}
 
 val logger: Logger = LoggerFactory.getLogger("DataSource.kt")
 
@@ -26,7 +17,7 @@ val logger: Logger = LoggerFactory.getLogger("DataSource.kt")
  * to the provided backoff sequence. If the sequence runs out of entries, the operation fails with the last
  * encountered exception.
  */
-tailrec fun createHikariDataSource(cfg: Config, backoffSequence: List<Duration> = defaultBackoffSequence): HikariDataSource {
+tailrec fun createHikariDataSource(cfg: Config, backoffSequence: Iterator<Long> = defaultBackoffMsSequence.iterator()): HikariDataSource {
     try {
         val config = HikariConfig()
         config.jdbcUrl = cfg.datasourceUrl
@@ -36,11 +27,12 @@ tailrec fun createHikariDataSource(cfg: Config, backoffSequence: List<Duration> 
         return HikariDataSource(config)
     } catch (ex: Exception) {
         logger.error("Failed to create data source ${ex.message}")
-        if (backoffSequence.size <= 1) throw ex
+        if (!backoffSequence.hasNext()) throw ex
     }
-    logger.info("Trying again in ${backoffSequence.first().seconds} seconds")
-    Thread.sleep(backoffSequence.first().toMillis())
-    return createHikariDataSource(cfg, backoffSequence.drop(1))
+    val backoffMillis = backoffSequence.next() / 1000
+    logger.info("Trying again in $backoffMillis millis")
+    Thread.sleep(backoffMillis)
+    return createHikariDataSource(cfg, backoffSequence)
 }
 
 fun migrate(ds: DataSource) {

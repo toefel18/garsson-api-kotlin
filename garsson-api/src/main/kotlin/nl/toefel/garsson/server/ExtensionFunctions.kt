@@ -64,4 +64,3 @@ val HttpHandler.blocks get() = BlockingHandler(this)
 
 /** Wraps the handler in a BlockingHandler (a blocking handler dispatches the request to a worker thread) */
 val HandlerFun.blocks get() = BlockingHandler(this)
-

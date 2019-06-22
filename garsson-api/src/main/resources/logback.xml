@@ -11,7 +11,7 @@
 		<appender-ref ref="STDOUT"/>
 	</root>
 
-	<!-- Turn on debug logging for all loggers under com.dhl.parcel -->
+	<!-- Turn on debug logging for all loggers under nl.toefel -->
 <!--	<logger name="nl.toefel" level="INFO" additivity="false">-->
 <!--		<appender-ref ref="STDOUT"/>-->
 <!--    </logger>-->
