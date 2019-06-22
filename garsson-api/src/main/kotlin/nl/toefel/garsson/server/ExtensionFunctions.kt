@@ -11,6 +11,8 @@ import nl.toefel.garsson.json.Jsonizer
 import nl.toefel.garsson.server.middleware.Attachments
 import nl.toefel.garsson.server.middleware.BasicErrorHandler
 import nl.toefel.garsson.server.middleware.RequireRoleHandler
+import java.lang.NumberFormatException
+import java.math.BigDecimal
 
 /** Unmarshals the request body to type [T] and attaches the the String representation to the exchange for logging by [RequestLoggingHandler] */
 inline fun <reified T> HttpServerExchange.readRequestBody(logOnError: Boolean = true): T {
@@ -72,8 +74,18 @@ val HttpHandler.blocks get() = BlockingHandler(this)
 val HandlerFun.blocks get() = BlockingHandler(this)
 
 
-/** Wraps the handler in a BlockingHandler (a blocking handler dispatches the request to a worker thread) */
+/** Wraps the handler in a BasicErrorHandler which handles common errors like bad user input */
 val HttpHandler.basicErrors get() = BasicErrorHandler(this)
 
-/** Wraps the handler in a BlockingHandler (a blocking handler dispatches the request to a worker thread) */
+/** Wraps the handler in a BasicErrorHandler which handles common errors like bad user input */
 val HandlerFun.basicErrors get() = BasicErrorHandler(this)
+
+
+fun toBigDecimal(paramName: String, decimalStringValue: String): BigDecimal {
+    return try {
+        BigDecimal(decimalStringValue)
+    } catch (ex: NumberFormatException) {
+        throw InvalidParameterFormat(paramName, "BigDecimal", decimalStringValue)
+    }
+}
+

@@ -70,7 +70,7 @@ class ProductIntegrationTest : ApplicationRestTest, FunSpec() {
                 .body("message", containsString("barcode"))
         }
 
-        test("Invalid price") {
+        test("Creating a product with invalid price should print appropriate error") {
             val invalidProduct = createProduct("Radler", "Grols").copy(
                 barcode = "999",
                 pricePerUnit = "!~#$~")
@@ -78,6 +78,7 @@ class ProductIntegrationTest : ApplicationRestTest, FunSpec() {
             post("/api/v1/products", invalidProduct)
                 .statusCode(400)
                 .contentType("application/json")
+                .body("message", containsString("parameter 'pricePerUnit' is expected to be of type 'BigDecimal' but has value !~#\$~"))
         }
 
         test("Create -> update -> read -> delete product") {

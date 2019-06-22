@@ -21,58 +21,7 @@ fun listProducts(): HandlerFun = { exchange: HttpServerExchange ->
     exchange.sendJsonResponse(200, allProductsDtos)
 }
 
-fun addProduct(): HandlerFun = { exchange: HttpServerExchange ->
-    try {
-        val newProduct: Product = exchange.readRequestBody()
-
-        transaction {
-            val existingProductWithBarcode = ProductEntity.find { ProductsTable.barcode eq newProduct.barcode }.firstOrNull()
-
-            if (existingProductWithBarcode != null) {
-                exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError("barcode already exists on product with id ${existingProductWithBarcode.id}"))
-            } else {
-                val createdProductEntity = ProductEntity.new {
-                    name = newProduct.name
-                    brand = newProduct.brand
-                    barcode = newProduct.barcode
-                    unit = newProduct.unit
-                    pricePerUnit = BigDecimal(newProduct.pricePerUnit)
-                    purchasePricePerUnit = newProduct.purchasePricePerUnit?.let { BigDecimal(it) }
-                    createdTime = now()
-                    lastEditTime = now()
-                }
-                val productDto = ProductConverter.toDto(createdProductEntity)
-                exchange.sendJsonResponse(Status.OK, productDto)
-            }
-        }
-    } catch (ex: BodyParseException) {
-        exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(ex.message!!))
-    } catch (ex: NumberFormatException) {
-        exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(ex.message!!))
-    }
-}
-
-// re-use code with delete
 fun getProduct(): HandlerFun = { exchange: HttpServerExchange ->
-    val productIdString = exchange.queryParameters["productId"]?.first
-    val productId = productIdString?.toLongOrNull()
-    if (productId == null) {
-        exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError("product id must be a number but was: $productIdString"))
-    } else {
-        transaction {
-            val productEntity = ProductEntity.findById(productId)
-            if (productEntity == null) {
-                exchange.sendJsonResponse(Status.NOT_FOUND, ApiError("product with id $productId does not exist"))
-            } else {
-                val productDto = ProductConverter.toDto(productEntity)
-                exchange.sendJsonResponse(Status.OK, productDto)
-            }
-        }
-    }
-}
-
-fun getProductNew(): HandlerFun = { exchange: HttpServerExchange ->
-    // TODO causes undertow to print ugly error log, maybe we should wrap with a default error handler?
     val productId = exchange.requireParamAsLong("productId")
 
     transaction {
@@ -86,55 +35,66 @@ fun getProductNew(): HandlerFun = { exchange: HttpServerExchange ->
     }
 }
 
-fun updateProduct(): HandlerFun = { exchange: HttpServerExchange ->
-    val productIdString = exchange.queryParameters["productId"]?.first
-    val productId = productIdString?.toLongOrNull()
-    if (productId == null) {
-        exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError("product id must be a number but was: $productIdString"))
-    } else {
-        try {
-            val updatedProduct: Product = exchange.readRequestBody()
-            transaction {
-                val productEntity = ProductEntity.findById(productId)
-                if (productEntity == null) {
-                    exchange.sendJsonResponse(Status.NOT_FOUND, ApiError("product with id $productId does not exist"))
-                } else {
-                    productEntity.name = updatedProduct.name
-                    productEntity.brand = updatedProduct.brand
-                    productEntity.barcode = updatedProduct.barcode ?: productEntity.barcode
-                    productEntity.unit = updatedProduct.unit
-                    productEntity.pricePerUnit = BigDecimal(updatedProduct.pricePerUnit)
-                    productEntity.purchasePricePerUnit = updatedProduct.purchasePricePerUnit?.let { BigDecimal(it) }
-                        ?: productEntity.purchasePricePerUnit
-                    productEntity.lastEditTime = now()
-                    val productDto = ProductConverter.toDto(productEntity)
-                    exchange.sendJsonResponse(Status.OK, productDto)
-                }
-            }
+fun addProduct(): HandlerFun = { exchange: HttpServerExchange ->
+    val newProduct: Product = exchange.readRequestBody()
 
-        } catch (ex: BodyParseException) {
-            exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(ex.message!!))
-        } catch (ex: NumberFormatException) {
-            exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(ex.message!!))
+    transaction {
+        val existingProductWithBarcode = ProductEntity.find { ProductsTable.barcode eq newProduct.barcode }.firstOrNull()
+
+        if (existingProductWithBarcode != null) {
+            exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError("barcode already exists on product with id ${existingProductWithBarcode.id}"))
+        } else {
+            val createdProductEntity = ProductEntity.new {
+                name = newProduct.name
+                brand = newProduct.brand
+                barcode = newProduct.barcode
+                unit = newProduct.unit
+                pricePerUnit = toBigDecimal("pricePerUnit", newProduct.pricePerUnit)
+                purchasePricePerUnit = newProduct.purchasePricePerUnit?.let {
+                    toBigDecimal("purchasePricePerUnit", it)
+                }
+                createdTime = now()
+                lastEditTime = now()
+            }
+            val productDto = ProductConverter.toDto(createdProductEntity)
+            exchange.sendJsonResponse(Status.OK, productDto)
+        }
+    }
+}
+
+fun updateProduct(): HandlerFun = { exchange: HttpServerExchange ->
+    val productId = exchange.requireParamAsLong("productId")
+    val updatedProduct: Product = exchange.readRequestBody()
+    transaction {
+        val productEntity = ProductEntity.findById(productId)
+        if (productEntity == null) {
+            exchange.sendJsonResponse(Status.NOT_FOUND, ApiError("product with id $productId does not exist"))
+        } else {
+            productEntity.name = updatedProduct.name
+            productEntity.brand = updatedProduct.brand
+            productEntity.barcode = updatedProduct.barcode ?: productEntity.barcode
+            productEntity.unit = updatedProduct.unit
+            productEntity.pricePerUnit = toBigDecimal("pricePerUnit", updatedProduct.pricePerUnit)
+            productEntity.purchasePricePerUnit = updatedProduct.purchasePricePerUnit?.let {
+                toBigDecimal("purchasePricePerUnit", it)
+            } ?: productEntity.purchasePricePerUnit
+            productEntity.lastEditTime = now()
+            val productDto = ProductConverter.toDto(productEntity)
+            exchange.sendJsonResponse(Status.OK, productDto)
         }
     }
 }
 
 fun deleteProduct(): HandlerFun = { exchange: HttpServerExchange ->
-    val productIdString = exchange.queryParameters["productId"]?.first
-    val productId = productIdString?.toLongOrNull()
-    if (productId == null) {
-        exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError("product id must be a number but was: $productIdString"))
-    } else {
-        transaction {
-            val productEntity = ProductEntity.findById(productId)
-            if (productEntity == null) {
-                exchange.sendJsonResponse(Status.NOT_FOUND, ApiError("product with id $productId does not exist"))
-            } else {
-                val productDto = ProductConverter.toDto(productEntity)
-                productEntity.delete()
-                exchange.sendJsonResponse(Status.OK, productDto)
-            }
+    val productId = exchange.requireParamAsLong("productId")
+    transaction {
+        val productEntity = ProductEntity.findById(productId)
+        if (productEntity == null) {
+            exchange.sendJsonResponse(Status.NOT_FOUND, ApiError("product with id $productId does not exist"))
+        } else {
+            val productDto = ProductConverter.toDto(productEntity)
+            productEntity.delete()
+            exchange.sendJsonResponse(Status.OK, productDto)
         }
     }
 }

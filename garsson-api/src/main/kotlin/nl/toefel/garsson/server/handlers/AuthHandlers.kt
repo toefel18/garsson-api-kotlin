@@ -9,7 +9,6 @@ import nl.toefel.garsson.dto.SuccessfulLoginResponse
 import nl.toefel.garsson.dto.User
 import nl.toefel.garsson.repository.UserEntity
 import nl.toefel.garsson.repository.UsersTable
-import nl.toefel.garsson.server.BodyParseException
 import nl.toefel.garsson.server.HandlerFun
 import nl.toefel.garsson.server.Status
 import nl.toefel.garsson.server.readRequestBody
@@ -23,23 +22,19 @@ import java.time.temporal.ChronoUnit
  * Login handler (curried function)
  */
 fun login(auth: JwtHmacAuthenticator): HandlerFun = { exchange: HttpServerExchange ->
-    try {
-        val credentials: LoginCredentials = exchange.readRequestBody()
+    val credentials: LoginCredentials = exchange.readRequestBody()
 
-        transaction {
-            val user = UserEntity.find { UsersTable.email eq credentials.email }.firstOrNull()
-            when {
-                user == null -> exchange.sendJsonResponse(Status.UNAUTHORIZED, ApiError("user not found"))
-                user.password == credentials.password -> {
-                    user.lastLoginTime = OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toString()
-                    val jwt = auth.generateJwt(User(credentials.email, roles = user.roles.split(",").toList()))
-                    exchange.responseHeaders.put(HttpString("Authorization"), "Bearer $jwt")
-                    exchange.sendJsonResponse(Status.OK, SuccessfulLoginResponse(jwt))
-                }
-                else -> exchange.sendJsonResponse(Status.UNAUTHORIZED, ApiError("invalid password"))
+    transaction {
+        val user = UserEntity.find { UsersTable.email eq credentials.email }.firstOrNull()
+        when {
+            user == null -> exchange.sendJsonResponse(Status.UNAUTHORIZED, ApiError("user not found"))
+            user.password == credentials.password -> {
+                user.lastLoginTime = OffsetDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.SECONDS).toString()
+                val jwt = auth.generateJwt(User(credentials.email, roles = user.roles.split(",").toList()))
+                exchange.responseHeaders.put(HttpString("Authorization"), "Bearer $jwt")
+                exchange.sendJsonResponse(Status.OK, SuccessfulLoginResponse(jwt))
             }
+            else -> exchange.sendJsonResponse(Status.UNAUTHORIZED, ApiError("invalid password"))
         }
-    } catch (ex: BodyParseException) {
-        exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(ex.message!!))
     }
 }

@@ -8,8 +8,9 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class RequestLoggingHandler(val next: HttpHandler) : HttpHandler {
+
     companion object {
-        val logger: Logger = LoggerFactory.getLogger("[API]")
+        val logger: Logger = LoggerFactory.getLogger(RequestLoggingHandler::class.java)
     }
 
     override fun handleRequest(exchange: HttpServerExchange?) {
