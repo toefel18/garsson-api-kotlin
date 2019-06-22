@@ -11,7 +11,7 @@ import nl.toefel.garsson.json.Jsonizer
 import nl.toefel.garsson.server.middleware.Attachments
 import nl.toefel.garsson.server.middleware.RequireRoleHandler
 
-class BodyParseException(message: String, val body: ByteArray, cause: Exception): RuntimeException(message, cause)
+class BodyParseException(message: String, val body: ByteArray, cause: Exception) : RuntimeException(message, cause)
 
 
 /** Unmarshals the request body to type [T] and attaches the the String representation to the exchange for logging by [RequestLoggingHandler] */
@@ -23,7 +23,7 @@ inline fun <reified T> HttpServerExchange.readRequestBody(logOnError: Boolean = 
         }
         // TODO add parsing based on Content-Type header, for now, assume JSON
         return Jsonizer.fromJson(requestBody)
-    } catch (ex : JsonParseException) {
+    } catch (ex: JsonParseException) {
         throw BodyParseException("Failed to parse request body to ${T::class.java.simpleName}", requestBody, ex)
     } catch (ex: MissingKotlinParameterException) {
         throw BodyParseException("Failed to parse request body to ${T::class.java.simpleName}, missing property ${ex.parameter.name}", requestBody, ex)
@@ -50,6 +50,14 @@ fun HttpServerExchange.sendJsonResponse(code: Int, data: Any) {
     this.responseSender.send(response)
 }
 
+fun HttpServerExchange.requireParam(name: String): String =
+    this.queryParameters[name]?.first ?: throw MissingRequiredParameter(name)
+
+fun HttpServerExchange.requireParamAsLong(name: String): Long {
+    val param = requireParam(name)
+    return param.toLongOrNull() ?: throw InvalidRequiredParameter(name, "Long", param)
+}
+
 /** Alias for a handler that is a function reference */
 typealias HandlerFun = (HttpServerExchange) -> Unit
 
@@ -64,3 +72,4 @@ val HttpHandler.blocks get() = BlockingHandler(this)
 
 /** Wraps the handler in a BlockingHandler (a blocking handler dispatches the request to a worker thread) */
 val HandlerFun.blocks get() = BlockingHandler(this)
+

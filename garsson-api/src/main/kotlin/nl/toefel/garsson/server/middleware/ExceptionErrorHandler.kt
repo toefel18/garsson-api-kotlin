@@ -4,9 +4,7 @@ import io.undertow.server.DefaultResponseListener
 import io.undertow.server.HttpHandler
 import io.undertow.server.HttpServerExchange
 import nl.toefel.garsson.dto.ApiError
-import nl.toefel.garsson.server.BodyParseException
-import nl.toefel.garsson.server.Status
-import nl.toefel.garsson.server.sendJsonResponse
+import nl.toefel.garsson.server.*
 import org.slf4j.LoggerFactory
 
 /**
@@ -34,12 +32,16 @@ class ExceptionErrorHandler(val next: HttpHandler) : HttpHandler {
         // create appropriate response for common errors
         val apiError = when (ex) {
             // fallback type, should be handled by code!
+            is MissingRequiredParameter -> ApiError(status = Status.BAD_REQUEST, message = "${ex.message}")
+            is InvalidRequiredParameter -> ApiError(status = Status.BAD_REQUEST, message = "${ex.message}")
             is BodyParseException -> ApiError(status = Status.BAD_REQUEST, message = "${ex.message}")
             null -> ApiError(status = Status.INTERNAL_SERVER_ERROR, message = "unknown error")
             else -> ApiError(status = Status.INTERNAL_SERVER_ERROR, message = "uncaught exception ${ex::class.qualifiedName}: ${ex.message}")
         }
 
-        logger.error("Unexpected error: ${apiError.message}", ex)
+        if (apiError.status == Status.INTERNAL_SERVER_ERROR) {
+            logger.error("Unexpected error: ${apiError.message}", ex)
+        }
 
         return if (!exchange.isResponseStarted) {
             exchange.sendJsonResponse(apiError.status, apiError)
