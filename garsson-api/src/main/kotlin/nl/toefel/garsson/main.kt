@@ -17,19 +17,11 @@ fun main(args: Array<String>) {
     logger.info("Migrating database")
     migrate(ds)
 
-    // create connection which can be used via
-    // transaction {} in code
+    // create connection which can be used via transaction {} in code
     Database.connect(ds)
-
-//    transaction {
-//        println(SchemaUtils.createStatements(ProductsTable))
-//    }
-//
-//    System.exit(0)
 
     val auth = JwtHmacAuthenticator(config.jwtSigningSecret, config.tokenValidity)
 
-    logger.info("Starting API server")
     val server = GarssonRouter(config, auth)
     server.start()
     Runtime.getRuntime().addShutdownHook(Thread(Runnable { server.stop() }))
