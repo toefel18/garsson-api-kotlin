@@ -55,6 +55,7 @@ fun addProduct(): HandlerFun = { exchange: HttpServerExchange ->
                 createdTime = now()
                 lastEditTime = now()
             }
+            commit()
             val productDto = ProductConverter.toDto(createdProductEntity)
             exchange.sendJsonResponse(Status.OK, productDto)
         }
