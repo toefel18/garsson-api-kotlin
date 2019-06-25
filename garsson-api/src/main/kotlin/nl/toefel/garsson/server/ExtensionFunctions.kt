@@ -11,7 +11,6 @@ import nl.toefel.garsson.json.Jsonizer
 import nl.toefel.garsson.server.middleware.Attachments
 import nl.toefel.garsson.server.middleware.BasicErrorHandler
 import nl.toefel.garsson.server.middleware.RequireRoleHandler
-import java.lang.NumberFormatException
 import java.math.BigDecimal
 
 /** Unmarshals the request body to type [T] and attaches the the String representation to the exchange for logging by [RequestLoggingHandler] */

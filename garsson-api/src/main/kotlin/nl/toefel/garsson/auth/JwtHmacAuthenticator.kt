@@ -6,8 +6,7 @@ import nl.toefel.garsson.dto.User
 import java.security.MessageDigest
 import java.time.Duration
 import java.time.ZonedDateTime
-import java.util.Date
-import java.util.UUID
+import java.util.*
 
 class JwtHmacAuthenticator(signSecret: String, val tokenValidity: Duration) {
 

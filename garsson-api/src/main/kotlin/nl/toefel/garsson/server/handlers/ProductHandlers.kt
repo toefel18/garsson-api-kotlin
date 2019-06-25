@@ -9,7 +9,6 @@ import nl.toefel.garsson.repository.ProductsTable
 import nl.toefel.garsson.server.*
 import nl.toefel.garsson.util.now
 import org.jetbrains.exposed.sql.transactions.transaction
-import java.math.BigDecimal
 
 
 fun listProducts(): HandlerFun = { exchange: HttpServerExchange ->

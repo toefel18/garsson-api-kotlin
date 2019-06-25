@@ -9,8 +9,8 @@ import nl.toefel.garsson.auth.JwtHmacAuthenticator
 import nl.toefel.garsson.server.handlers.*
 import nl.toefel.garsson.server.middleware.AuthTokenExtractorHandler
 import nl.toefel.garsson.server.middleware.CORSHandler
-import nl.toefel.garsson.server.middleware.UnexpectedErrorHandler
 import nl.toefel.garsson.server.middleware.RequestLoggingHandler
+import nl.toefel.garsson.server.middleware.UnexpectedErrorHandler
 import org.slf4j.LoggerFactory
 
 /**
