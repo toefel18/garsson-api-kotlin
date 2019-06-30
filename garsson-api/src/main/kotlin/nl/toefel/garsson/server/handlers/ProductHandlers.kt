@@ -79,6 +79,7 @@ fun updateProduct(): HandlerFun = { exchange: HttpServerExchange ->
                 toBigDecimal("purchasePricePerUnit", it)
             } ?: productEntity.purchasePricePerUnit
             productEntity.lastEditTime = now()
+            commit()
             val productDto = ProductConverter.toDto(productEntity)
             exchange.sendJsonResponse(Status.OK, productDto)
         }
@@ -94,6 +95,7 @@ fun deleteProduct(): HandlerFun = { exchange: HttpServerExchange ->
         } else {
             val productDto = ProductConverter.toDto(productEntity)
             productEntity.delete()
+            commit()
             exchange.sendJsonResponse(Status.OK, productDto)
         }
     }

@@ -1,5 +1,9 @@
 # Garsson API [![Build Status](https://travis-ci.org/toefel18/garsson-api-kotlin.svg?branch=master)](https://travis-ci.org/toefel18/garsson-api-kotlin)
 
+## Notes:
+
+ use commit() explicitly when returning a response. Otherwise the response might be flushed before the database persists the entity!
+
 
 ## Starting a local database 
 
