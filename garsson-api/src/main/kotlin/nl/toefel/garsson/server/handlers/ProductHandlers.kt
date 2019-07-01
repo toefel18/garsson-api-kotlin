@@ -23,14 +23,15 @@ fun listProducts(): HandlerFun = { exchange: HttpServerExchange ->
 fun getProduct(): HandlerFun = { exchange: HttpServerExchange ->
     val productId = exchange.requireParamAsLong("productId")
 
-    transaction {
-        val productEntity = ProductEntity.findById(productId)
-        if (productEntity == null) {
-            exchange.sendJsonResponse(Status.NOT_FOUND, ApiError("product with id $productId does not exist"))
-        } else {
-            val productDto = ProductConverter.toDto(productEntity)
-            exchange.sendJsonResponse(Status.OK, productDto)
-        }
+    val productEntity = transaction {
+        ProductEntity.findById(productId)
+    }
+
+    if (productEntity == null) {
+        exchange.sendJsonResponse(Status.NOT_FOUND, ApiError("product with id $productId does not exist"))
+    } else {
+        val productDto = ProductConverter.toDto(productEntity)
+        exchange.sendJsonResponse(Status.OK, productDto)
     }
 }
 
