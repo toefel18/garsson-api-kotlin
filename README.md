@@ -2,7 +2,8 @@
 
 ## Notes:
 
- use commit() explicitly when returning a response. Otherwise the response might be flushed before the database persists the entity!
+ Use commit() explicitly when returning a response inside a transaction, 
+ otherwise the response might be flushed before the database persists the entity!
 
 
 ## Starting a local database 
