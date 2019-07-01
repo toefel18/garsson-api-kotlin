@@ -14,7 +14,7 @@ fun main() {
 }
 
 private fun createProduct(name: String, brand: String, barcode: String,
-                          unit: String = "Bottle", price:String = "1.75", cost: String= "1.20") {
+                          unit: String = "BOTTLE", price:String = "1.75", cost: String= "1.20") {
     post("http://localhost:8080/api/v1/products", """{
         "name":"$name",
         "brand":"$brand",
