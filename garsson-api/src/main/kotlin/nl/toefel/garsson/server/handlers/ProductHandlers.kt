@@ -35,7 +35,7 @@ fun getProduct(): HandlerFun = { exchange: HttpServerExchange ->
     }
 }
 
-fun addProduct(): HandlerFun = { exchange: HttpServerExchange ->
+fun addProduct(messageSender: WebSocketMessageSender): HandlerFun = { exchange: HttpServerExchange ->
     val newProduct: Product = exchange.readRequestBody()
 
     transaction {
@@ -59,6 +59,7 @@ fun addProduct(): HandlerFun = { exchange: HttpServerExchange ->
             commit()
             val productDto = ProductConverter.toDto(createdProductEntity)
             exchange.sendJsonResponse(Status.OK, productDto)
+            messageSender.resourceAdded(newProduct::class.simpleName!!, createdProductEntity.id.toString(), "unknown")
         }
     }
 }

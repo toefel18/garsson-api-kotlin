@@ -40,7 +40,7 @@ class AuthTokenExtractorHandler(private val auth: JwtHmacAuthenticator, val next
                     is DecodingException -> "invalid jwt"
                     else -> "invalid token"
                 }
-                logger.warn("$authError: ${ex.javaClass.simpleName}: ${ex.message}")
+                logger.error("$authError: ${ex.javaClass.simpleName}: ${ex.message} on URL ${exchange.requestURL}")
                 exchange.sendJsonResponse(Status.BAD_REQUEST, ApiError(authError))
                 return
             }

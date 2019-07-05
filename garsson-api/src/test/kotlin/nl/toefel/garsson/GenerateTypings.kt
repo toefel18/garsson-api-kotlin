@@ -20,7 +20,8 @@ internal class GenerateTypings : StringSpec({
                 SuccessfulLoginResponse::class,
                 Product::class,
                 Version::class,
-                User::class
+                User::class,
+                ResourceUpdatedEvent::class
             ),
             mappings = mapOf(
                 LocalDateTime::class to "Date",
