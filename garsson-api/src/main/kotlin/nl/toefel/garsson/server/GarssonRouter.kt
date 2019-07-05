@@ -76,13 +76,13 @@ class GarssonRouter(private val config: Config, val auth: JwtHmacAuthenticator) 
                             .get("/api/v1/products", listProducts().basicErrors.blocks)
                             .post("/api/v1/products", addProduct(messageSender).basicErrors.blocks)
                             .get("/api/v1/products/{productId}", getProduct().basicErrors.blocks)
-                            .put("/api/v1/products/{productId}", updateProduct().basicErrors.blocks)
-                            .delete("/api/v1/products/{productId}", deleteProduct().basicErrors.blocks)
+                            .put("/api/v1/products/{productId}", updateProduct(messageSender).basicErrors.blocks)
+                            .delete("/api/v1/products/{productId}", deleteProduct(messageSender).basicErrors.blocks)
 
                             .get("/api/v1/orders", listOrders().basicErrors requiresRole "user")
                             .get("/api/v1/orders/{orderId}", getOrder().basicErrors requiresRole "user")
 
-                            .get("/api/v1/update-stream", updateStreamWebsocketHandler(webSocketsContainer))
+                            .get("/api/v1/update-stream", updateStreamWebSocketHandler(webSocketsContainer))
 
                             .setFallbackHandler(fallback())
                             .setInvalidMethodHandler(invalidMethod())

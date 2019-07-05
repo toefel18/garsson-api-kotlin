@@ -59,12 +59,12 @@ fun addProduct(messageSender: WebSocketMessageSender): HandlerFun = { exchange: 
             commit()
             val productDto = ProductConverter.toDto(createdProductEntity)
             exchange.sendJsonResponse(Status.OK, productDto)
-            messageSender.resourceAdded(newProduct::class.simpleName!!, createdProductEntity.id.toString(), "unknown")
+            messageSender.resourceAdded(Product::class.simpleName!!, createdProductEntity.id.toString(), "unknown")
         }
     }
 }
 
-fun updateProduct(): HandlerFun = { exchange: HttpServerExchange ->
+fun updateProduct(messageSender: WebSocketMessageSender): HandlerFun = { exchange: HttpServerExchange ->
     val productId = exchange.requireParamAsLong("productId")
     val updatedProduct: Product = exchange.readRequestBody()
     transaction {
@@ -84,11 +84,12 @@ fun updateProduct(): HandlerFun = { exchange: HttpServerExchange ->
             commit()
             val productDto = ProductConverter.toDto(productEntity)
             exchange.sendJsonResponse(Status.OK, productDto)
+            messageSender.resourceUpdated(Product::class.simpleName!!, productId.toString(), "unknown")
         }
     }
 }
 
-fun deleteProduct(): HandlerFun = { exchange: HttpServerExchange ->
+fun deleteProduct(messageSender: WebSocketMessageSender): HandlerFun = { exchange: HttpServerExchange ->
     val productId = exchange.requireParamAsLong("productId")
     transaction {
         val productEntity = ProductEntity.findById(productId)
@@ -99,6 +100,7 @@ fun deleteProduct(): HandlerFun = { exchange: HttpServerExchange ->
             productEntity.delete()
             commit()
             exchange.sendJsonResponse(Status.OK, productDto)
+            messageSender.resourceDeleted(Product::class.simpleName!!, productId.toString(), "unknown")
         }
     }
 }
