@@ -44,7 +44,7 @@ dependencies {
     compile 'com.zaxxer:HikariCP:3.3.1'
 
     compile 'org.postgresql:postgresql:42.2.6'
-    implementation 'org.jetbrains.exposed:exposed:0.16.3'
+    implementation 'org.jetbrains.exposed:exposed:0.17.4'
 
     // generate typescript typings
     compile 'com.github.ntrrgc:ts-generator:1.1.1'
