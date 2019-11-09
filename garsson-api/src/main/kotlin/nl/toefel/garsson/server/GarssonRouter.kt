@@ -72,6 +72,8 @@ class GarssonRouter(private val config: Config, val auth: JwtHmacAuthenticator) 
                             .get("/statistics", statistics(this))
 
                             .post("/api/v1/login", login(auth).basicErrors.blocks)
+                            .get("/api/v1/google/login", triggerGoogleLogin().basicErrors.blocks)
+                            .get("/api/v1/google/callback", authorizationGrantCallback().basicErrors.blocks)
 
                             .get("/api/v1/products", listProducts().basicErrors.blocks)
                             .post("/api/v1/products", addProduct(messageSender).basicErrors.blocks)

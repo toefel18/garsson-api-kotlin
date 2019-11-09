@@ -33,6 +33,7 @@ object ApplicationTest : TestListener {
 
         logger.info("Starting postgres in test")
 
+        // TODO replace with https://github.com/opentable/otj-pg-embedded ??
         postgres = KGenericContainer("postgres")
             .withEnv("POSTGRES_USER", "garsson-api")
             .withEnv("POSTGRES_PASSWORD", "garsson-api")
@@ -55,7 +56,8 @@ object ApplicationTest : TestListener {
         migrate(ds)
 
         logger.info("Preparing connection for the application to use")
-        Database.connect(ds)
+        val db = Database.connect(ds)
+        db.useNestedTransactions = true
 
         logger.info("Starting application for test")
         val auth = JwtHmacAuthenticator(config!!.jwtSigningSecret, config!!.tokenValidity)

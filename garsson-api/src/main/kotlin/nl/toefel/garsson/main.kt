@@ -17,8 +17,8 @@ fun main(args: Array<String>) {
     logger.info("Migrating database")
     migrate(ds)
 
-    // create connection which can be used via transaction {} in code
-    Database.connect(ds)
+    val db = Database.connect(ds)
+    db.useNestedTransactions = true
 
     val auth = JwtHmacAuthenticator(config.jwtSigningSecret, config.tokenValidity)
 
