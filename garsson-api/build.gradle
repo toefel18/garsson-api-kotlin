@@ -51,7 +51,7 @@ dependencies {
 
     testCompile 'io.kotlintest:kotlintest-runner-junit5:3.3.3'
     testCompile 'io.rest-assured:rest-assured:4.0.0'
-    testCompile "org.testcontainers:testcontainers:1.11.4"
+    testCompile "org.testcontainers:testcontainers:1.12.4"
 }
 
 gversion {
