@@ -38,7 +38,7 @@ dependencies {
     runtime 'io.jsonwebtoken:jjwt-jackson:0.10.7'
 
     compile "io.undertow:undertow-websockets-jsr:2.0.22.Final"
-    compile "io.undertow:undertow-core:2.0.22.Final"
+    compile "io.undertow:undertow-core:2.2.5.Final"
 
     compile 'org.flywaydb:flyway-core:5.2.4'
     compile 'com.zaxxer:HikariCP:3.3.1'
